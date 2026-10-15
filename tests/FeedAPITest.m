@@ -9,17 +9,21 @@ classdef FeedAPITest < matlab.unittest.TestCase
     %
     %   Needs Python 3 with the websockets package. The interpreter is
     %   'python' on the PATH unless OPENALGO_TEST_PYTHON names another one.
-    %   Temporary files (certificate, frame record, server log) go to
+    %   Temporary files (certificates, frame record, server log) go to
     %   OPENALGO_TEST_TMP when set, else tempdir, and are removed afterwards.
     %
     %   The feed scenarios run once per transport (test parameter
     %   Transport): ws (tcpclient) and wss over the .NET, Python interface
-    %   and Java TLS transports. The mock server offers wss:// with a
-    %   self-signed certificate made at start-up, so these clients turn
-    %   certificate verification off (tls_verify = false); one test checks
-    %   that the default (verification on) rejects that certificate. A
-    %   transport that is not available in the session is skipped (the test
-    %   is marked incomplete by an assumption). For the Python transport the
+    %   and Java TLS transports. The mock server makes a test CA at start-up
+    %   and serves wss:// with a certificate it signed for localhost and
+    %   127.0.0.1. The wss clients keep certificate verification on and
+    %   trust that CA through tls_ca_file. Further tests check that the
+    %   default trust store rejects the certificate, that an unrelated CA
+    %   file does too, that a certificate for another host name is refused
+    %   even though its CA is trusted, and that tls_verify = false (not
+    %   possible with Java) accepts it. A transport that is not available in
+    %   the session is skipped (the test is marked incomplete by an
+    %   assumption). For the Python transport the
     %   tests configure pyenv when Python is not loaded yet: the
     %   interpreter in OPENALGO_TEST_PYENV, else a supported default, else a
     %   Python 3.13 or 3.12 found in the usual Windows locations.
@@ -36,6 +40,8 @@ classdef FeedAPITest < matlab.unittest.TestCase
         LogFile = ''
         Url = ''
         TlsUrl = ''
+        WrongNameUrl = ''
+        TlsDir = ''
         PythonReady = false
     end
 
@@ -61,6 +67,7 @@ classdef FeedAPITest < matlab.unittest.TestCase
             [~, name] = fileparts(tempname);
             tc.WorkDir = fullfile(base, ['feedtest_' name]);
             mkdir(tc.WorkDir);
+            tc.TlsDir = fullfile(tc.WorkDir, 'tls');
             tc.addTeardown(@() FeedAPITest.removeDir(tc.WorkDir));
             tc.RecordFile = fullfile(tc.WorkDir, 'frames.jsonl');
             tc.ReadyFile = fullfile(tc.WorkDir, 'ready.txt');
@@ -75,7 +82,7 @@ classdef FeedAPITest < matlab.unittest.TestCase
             args = {py, '-u', script, '--port', '0', '--ready-file', tc.ReadyFile, ...
                 '--pid-file', tc.PidFile, '--record', tc.RecordFile, ...
                 '--api-key', tc.ApiKey, '--lifetime', '1800', ...
-                '--tls-port', '0', '--tls-dir', fullfile(tc.WorkDir, 'tls')};
+                '--tls-port', '0', '--tls-dir', tc.TlsDir};
             proc = FeedAPITest.launch(args, tc.LogFile);
             tc.addTeardown(@FeedAPITest.stopServer, proc, tc.ReadyFile, tc.PidFile);
 
@@ -87,8 +94,9 @@ classdef FeedAPITest < matlab.unittest.TestCase
                 FeedAPITest.readText(tc.LogFile)));
             ports = str2double(splitlines(strtrim(fileread(tc.ReadyFile))));
             tc.Url = sprintf('ws://127.0.0.1:%d', ports(1));
-            if numel(ports) >= 2 && ports(2) > 0
+            if numel(ports) >= 3 && ports(2) > 0
                 tc.TlsUrl = sprintf('wss://127.0.0.1:%d', ports(2));
+                tc.WrongNameUrl = sprintf('wss://127.0.0.1:%d', ports(3));
             end
             tc.PythonReady = FeedAPITest.preparePython();
         end
@@ -190,12 +198,16 @@ classdef FeedAPITest < matlab.unittest.TestCase
                 tc.verifyError(@() w.open(1), 'openalgo:WebSocketClient:transportUnavailable');
                 tc.verifyTrue(w.isClosed());
             end
+            w = openalgo.internal.WebSocketClient('wss://127.0.0.1:1', 'CaFile', 'no-such-file.pem');
+            tc.verifyError(@() w.open(1), 'openalgo:WebSocketClient:badOption');
             w = openalgo.internal.WebSocketClient('wss://127.0.0.1:1');
             tc.verifyTrue(w.VerifyCertificate);   % verification is on by default
             tc.verifyEqual(w.TlsTransport, 'auto');
+            tc.verifyEqual(w.CaFile, '');
             c = FeedTestClient('k');
             tc.verifyTrue(c.tls_verify);
             tc.verifyEqual(c.tls_transport, 'auto');
+            tc.verifyEqual(c.tls_ca_file, '');
         end
 
         function testGuardsWhenNotConnected(tc)
@@ -885,17 +897,50 @@ classdef FeedAPITest < matlab.unittest.TestCase
         end
 
         function testTlsVerifiesCertificateByDefault(tc, TlsTransport)
+            % Without the test CA the system trust store must refuse the server.
             [c, cap] = tc.newClient(['wss_' TlsTransport]);
-            c.tls_verify = true;
+            c.tls_ca_file = '';
+            tc.verifyTrue(c.tls_verify);
             tc.verifyFalse(c.connect());
             tc.verifyFalse(c.connected);
             tc.verifyTrue(cap.has('[ERROR]  WebSocket error: '), cap.all());
             tc.verifyTrue(cap.has('[ERROR]  Failed to connect to WebSocket server'));
         end
 
+        function testTlsRejectsUnrelatedCaFile(tc, TlsTransport)
+            [c, cap] = tc.newClient(['wss_' TlsTransport]);
+            c.tls_ca_file = fullfile(tc.TlsDir, 'other-ca.pem');
+            tc.verifyFalse(c.connect());
+            tc.verifyTrue(cap.has('[ERROR]  WebSocket error: '), cap.all());
+        end
+
+        function testTlsVerifiesHostName(tc, TlsTransport)
+            % The CA is trusted, but the certificate names another host.
+            [c, cap] = tc.newClient(['wss_' TlsTransport], 'Url', tc.WrongNameUrl);
+            tc.verifyFalse(c.connect());
+            tc.verifyFalse(c.connected);
+            tc.verifyTrue(cap.has('[ERROR]  WebSocket error: '), cap.all());
+        end
+
+        function testTlsWithoutVerification(tc, TlsTransport)
+            % tls_verify = false accepts any certificate, here one for
+            % another host from an untrusted CA. Java cannot do this.
+            [c, cap] = tc.newClient(['wss_' TlsTransport], 'Url', tc.WrongNameUrl);
+            c.tls_ca_file = '';
+            c.tls_verify = false;
+            if strcmp(TlsTransport, 'java')
+                tc.verifyFalse(c.connect());
+                tc.verifyTrue(cap.has( ...
+                    '[ERROR]  WebSocket error: Certificate verification cannot be disabled on the Java transport.'), cap.all());
+            else
+                tc.verifyTrue(c.connect(), cap.all());
+                tc.verifyEqual(c.ws.TransportName, TlsTransport);
+            end
+        end
+
         function testTlsAutoSelection(tc)
             tc.assumeNotEmpty(tc.TlsUrl, 'mock server has no wss:// listener');
-            w = openalgo.internal.WebSocketClient(tc.TlsUrl, 'VerifyCertificate', false);
+            w = openalgo.internal.WebSocketClient(tc.TlsUrl, 'CaFile', fullfile(tc.TlsDir, 'ca.pem'));
             cleanup = onCleanup(@() w.abort());
             w.open(5);
             if openalgo.internal.DotNetTlsTransport.isAvailable()
@@ -957,6 +1002,7 @@ classdef FeedAPITest < matlab.unittest.TestCase
                 url = tc.Url;
             else
                 tc.assumeNotEmpty(tc.TlsUrl, 'mock server has no wss:// listener');
+                tc.assumeNotEmpty(tc.WrongNameUrl, 'mock server has no wss:// listener');
                 switch transport
                     case 'dotnet'
                         tc.assumeTrue(openalgo.internal.DotNetTlsTransport.isAvailable(), ...
@@ -979,7 +1025,7 @@ classdef FeedAPITest < matlab.unittest.TestCase
             c = FeedTestClient(p.Results.Key, [], [], p.Results.Url, p.Results.Verbose, p.Results.AutoReconnect);
             if ~strcmp(transport, 'ws')
                 c.tls_transport = transport;
-                c.tls_verify = false;   % self-signed test certificate
+                c.tls_ca_file = fullfile(tc.TlsDir, 'ca.pem');   % test CA; verification stays on
             end
             cap = LogCapture();
             c.log_sink = @(line) cap.add(line);

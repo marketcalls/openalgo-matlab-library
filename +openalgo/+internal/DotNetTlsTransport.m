@@ -4,6 +4,11 @@ classdef DotNetTlsTransport < handle
     %   AuthenticateAsClient(host) sends the host name (SNI) and validates
     %   the server certificate chain and name with the Windows trust store.
     %
+    %   With CaFile a validation callback also accepts a chain that ends in
+    %   one of the PEM file's certificates: the chain is built again with
+    %   them as extra certificates and its root must be one of them. A
+    %   host name mismatch is always refused.
+    %
     %   Reads never block: one ReadAsync task is kept pending and read() only
     %   collects it once IsCompleted is true, then starts the next one. Read
     %   timeouts are not used because a timed out SslStream read leaves the
@@ -17,6 +22,7 @@ classdef DotNetTlsTransport < handle
         Name = 'dotnet'
         Error = ''
         Verify = true
+        CaFile = ''
     end
 
     properties (Access = private)
@@ -44,12 +50,70 @@ classdef DotNetTlsTransport < handle
             %ACCEPTANYCERTIFICATE Validation callback used only when Verify is false.
             ok = true;
         end
+
+        function ok = validateWithCaFile(certificate, errors, cas)
+            %VALIDATEWITHCAFILE Validation callback used when CaFile is given.
+            %   certificate and errors come from SslStream; cas is the
+            %   X509Certificate2Collection read from the CA file.
+            ok = false;
+            try
+                text = char(errors.ToString());
+                if strcmp(text, 'None')
+                    ok = true;
+                    return
+                end
+                if contains(text, 'RemoteCertificateNameMismatch') || ...
+                        contains(text, 'RemoteCertificateNotAvailable')
+                    return
+                end
+                leaf = System.Security.Cryptography.X509Certificates.X509Certificate2(certificate);
+                chain = System.Security.Cryptography.X509Certificates.X509Chain();
+                policy = chain.ChainPolicy;
+                policy.RevocationMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.NoCheck;
+                policy.VerificationFlags = ...
+                    System.Security.Cryptography.X509Certificates.X509VerificationFlags.AllowUnknownCertificateAuthority;
+                policy.ExtraStore.AddRange(cas);
+                % AllowUnknownCertificateAuthority only waives an untrusted
+                % root or a partial chain; expiry and signature errors still
+                % fail Build. The root must then be a CA file certificate.
+                if ~chain.Build(leaf)
+                    return
+                end
+                elements = chain.ChainElements;
+                root = char(elements.Item(elements.Count - 1).Certificate.Thumbprint);
+                for i = 0:cas.Count - 1
+                    if strcmpi(root, char(cas.Item(i).Thumbprint))
+                        ok = true;
+                        return
+                    end
+                end
+            catch
+                ok = false;
+            end
+        end
+
+        function cas = readCaFile(caFile)
+            %READCAFILE The certificates of a PEM file as an X509Certificate2Collection.
+            text = fileread(caFile);
+            blocks = regexp(text, '-----BEGIN CERTIFICATE-----(.*?)-----END CERTIFICATE-----', 'tokens');
+            cas = System.Security.Cryptography.X509Certificates.X509Certificate2Collection();
+            for i = 1:numel(blocks)
+                der = matlab.net.base64decode(regexprep(blocks{i}{1}, '\s', ''));
+                cas.Add(System.Security.Cryptography.X509Certificates.X509Certificate2(uint8(der)));
+            end
+            if cas.Count == 0
+                error('openalgo:WebSocketClient:badOption', 'No certificate found in CA file: %s', caFile);
+            end
+        end
     end
 
     methods
-        function obj = DotNetTlsTransport(verify)
+        function obj = DotNetTlsTransport(verify, caFile)
             if nargin >= 1
                 obj.Verify = logical(verify);
+            end
+            if nargin >= 2
+                obj.CaFile = char(caFile);
             end
         end
 
@@ -67,12 +131,18 @@ classdef DotNetTlsTransport < handle
             end
             obj.Client.NoDelay = true;
             network = obj.Client.GetStream();
-            if obj.Verify
-                obj.Stream = System.Net.Security.SslStream(network, false);
-            else
+            if ~obj.Verify
                 callback = System.Net.Security.RemoteCertificateValidationCallback( ...
                     @openalgo.internal.DotNetTlsTransport.acceptAnyCertificate);
                 obj.Stream = System.Net.Security.SslStream(network, false, callback);
+            elseif ~isempty(obj.CaFile)
+                cas = openalgo.internal.DotNetTlsTransport.readCaFile(obj.CaFile);
+                callback = System.Net.Security.RemoteCertificateValidationCallback( ...
+                    @(~, certificate, ~, errors) ...
+                    openalgo.internal.DotNetTlsTransport.validateWithCaFile(certificate, errors, cas));
+                obj.Stream = System.Net.Security.SslStream(network, false, callback);
+            else
+                obj.Stream = System.Net.Security.SslStream(network, false);
             end
             % The handshake runs synchronously on the MATLAB thread: an async
             % handshake would call the MATLAB validation callback from a

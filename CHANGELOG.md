@@ -5,6 +5,24 @@ All notable changes to the OpenAlgo MATLAB library are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `tls_ca_file` on the feed client: a PEM file of CA certificates trusted in
+  addition to the system trust store, for a `wss://` server with a private
+  CA. Supported by the .NET, Python and Java TLS providers; the host name is
+  still verified.
+
+### Fixed
+
+- The Java TLS provider now verifies the server's host name (HTTPS endpoint
+  identification). Before, it checked only the certificate chain.
+- The `wss://` feed tests on Java failed on CI because Java cannot turn
+  certificate verification off. The tests now trust a test CA through
+  `tls_ca_file` with every provider and also check that a wrong host name
+  and an unrelated CA are rejected.
+
 ## [1.0.0] - 2026-10-16
 
 First release. The library is a MATLAB replica of the OpenAlgo Python SDK

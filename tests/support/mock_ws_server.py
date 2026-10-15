@@ -40,12 +40,21 @@ Test control messages use {"action": "mock", "cmd": ...}:
 * shutdown  {}                          stop the server
 
 With --tls-port (0 picks a free port) the same server is also offered over
-wss:// with a self-signed certificate for localhost and 127.0.0.1, created at
-start-up in --tls-dir (Python cryptography package, else the openssl tool).
+wss://. A small test PKI is created at start-up in --tls-dir (Python
+cryptography package, else the openssl tool):
 
-On start-up the bound port is written to --ready-file (atomically; a second
-line holds the wss:// port when TLS is on, else 0) and the process id to
---pid-file when given.
+    ca.pem              test CA; clients trust it through their CA file option
+    server.pem/.key     signed by the CA, for localhost and 127.0.0.1
+    wrongname.pem/.key  signed by the CA, for wrong-host.invalid only
+    other-ca.pem        an unrelated CA that signs nothing used here
+
+The main wss:// listener serves server.pem. A second wss:// listener on a
+free port serves wrongname.pem, so a client that trusts ca.pem must still
+refuse it because of the host name.
+
+On start-up the ports are written to --ready-file (atomically), one per
+line: ws://, wss://, wss:// with the wrong name (0 when TLS is off), and the
+process id to --pid-file when given.
 """
 
 import argparse
@@ -372,57 +381,154 @@ def make_process_request(state):
     return process_request
 
 
-def make_self_signed(directory):
-    """Create cert.pem and key.pem for localhost / 127.0.0.1 in directory."""
-    os.makedirs(directory, exist_ok=True)
-    cert_path = os.path.join(directory, "cert.pem")
-    key_path = os.path.join(directory, "key.pem")
-    try:
-        import datetime
-        import ipaddress
-        from cryptography import x509
-        from cryptography.hazmat.primitives import hashes, serialization
-        from cryptography.hazmat.primitives.asymmetric import rsa
-        from cryptography.x509.oid import NameOID
+SERVER_NAMES = ("localhost", "127.0.0.1")
+WRONG_NAMES = ("wrong-host.invalid",)
 
-        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")])
-        now = datetime.datetime.now(datetime.timezone.utc)
-        cert = (
-            x509.CertificateBuilder()
-            .subject_name(name)
-            .issuer_name(name)
-            .public_key(key.public_key())
-            .serial_number(x509.random_serial_number())
-            .not_valid_before(now - datetime.timedelta(days=1))
-            .not_valid_after(now + datetime.timedelta(days=7))
-            .add_extension(x509.SubjectAlternativeName([
-                x509.DNSName("localhost"),
-                x509.IPAddress(ipaddress.ip_address("127.0.0.1")),
-            ]), critical=False)
-            .sign(key, hashes.SHA256())
-        )
+
+def make_test_pki(directory):
+    """Create the test CA, server certificates and an unrelated CA in directory."""
+    os.makedirs(directory, exist_ok=True)
+    paths = {name: os.path.join(directory, name) for name in (
+        "ca.pem", "ca.key", "server.pem", "server.key",
+        "wrongname.pem", "wrongname.key", "other-ca.pem", "other-ca.key")}
+    try:
+        import cryptography  # noqa: F401
+    except ImportError:
+        make_test_pki_openssl(directory, paths)
+    else:
+        make_test_pki_cryptography(paths)
+    return paths
+
+
+def make_test_pki_cryptography(paths):
+    import datetime
+    import ipaddress
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    def write(cert, key, cert_path, key_path):
         with open(key_path, "wb") as f:
             f.write(key.private_bytes(serialization.Encoding.PEM,
                                       serialization.PrivateFormat.TraditionalOpenSSL,
                                       serialization.NoEncryption()))
         with open(cert_path, "wb") as f:
             f.write(cert.public_bytes(serialization.Encoding.PEM))
-        return cert_path, key_path
-    except ImportError:
-        pass
+
+    def make_ca(common_name):
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(name).issuer_name(name)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - datetime.timedelta(days=1))
+            .not_valid_after(now + datetime.timedelta(days=7))
+            .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+            .add_extension(x509.KeyUsage(
+                digital_signature=False, content_commitment=False, key_encipherment=False,
+                data_encipherment=False, key_agreement=False, key_cert_sign=True,
+                crl_sign=True, encipher_only=False, decipher_only=False), critical=True)
+            .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
+            .sign(key, hashes.SHA256())
+        )
+        return cert, key
+
+    def make_leaf(ca_cert, ca_key, names):
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        alt = []
+        for n in names:
+            try:
+                alt.append(x509.IPAddress(ipaddress.ip_address(n)))
+            except ValueError:
+                alt.append(x509.DNSName(n))
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, names[0])]))
+            .issuer_name(ca_cert.subject)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - datetime.timedelta(days=1))
+            .not_valid_after(now + datetime.timedelta(days=7))
+            .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+            .add_extension(x509.KeyUsage(
+                digital_signature=True, content_commitment=False, key_encipherment=True,
+                data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                crl_sign=False, encipher_only=False, decipher_only=False), critical=True)
+            .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
+            .add_extension(x509.SubjectAlternativeName(alt), critical=False)
+            .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
+            .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_key.public_key()),
+                           critical=False)
+            .sign(ca_key, hashes.SHA256())
+        )
+        return cert, key
+
+    ca_cert, ca_key = make_ca("OpenAlgo MATLAB test CA")
+    write(ca_cert, ca_key, paths["ca.pem"], paths["ca.key"])
+    write(*make_leaf(ca_cert, ca_key, SERVER_NAMES), paths["server.pem"], paths["server.key"])
+    write(*make_leaf(ca_cert, ca_key, WRONG_NAMES), paths["wrongname.pem"], paths["wrongname.key"])
+    other_cert, other_key = make_ca("Unrelated test CA")
+    write(other_cert, other_key, paths["other-ca.pem"], paths["other-ca.key"])
+
+
+def make_test_pki_openssl(directory, paths):
     openssl = shutil.which("openssl")
     for candidate in (r"C:\Program Files\Git\usr\bin\openssl.exe", "/usr/bin/openssl"):
         if not openssl and os.path.exists(candidate):
             openssl = candidate
     if not openssl:
         raise RuntimeError("TLS needs the cryptography package or the openssl tool")
-    subprocess.run([openssl, "req", "-x509", "-newkey", "rsa:2048", "-nodes",
-                    "-keyout", key_path, "-out", cert_path, "-days", "7",
-                    "-subj", "/CN=localhost",
-                    "-addext", "subjectAltName=DNS:localhost,IP:127.0.0.1"],
-                   check=True, capture_output=True)
-    return cert_path, key_path
+
+    def run(*args):
+        subprocess.run([openssl, *args], check=True, capture_output=True)
+
+    def make_ca(stem, common_name):
+        ext = os.path.join(directory, stem + ".ext")
+        with open(ext, "w", encoding="ascii") as f:
+            f.write("basicConstraints=critical,CA:TRUE,pathlen:0\n"
+                    "keyUsage=critical,keyCertSign,cRLSign\n"
+                    "subjectKeyIdentifier=hash\n")
+        run("req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "7",
+            "-keyout", paths[stem + ".key"], "-out", paths[stem + ".pem"],
+            "-subj", "/CN=" + common_name, "-extensions", "v3_ca_test",
+            "-config", openssl_config(directory, ext))
+
+    def make_leaf(stem, names):
+        alt = ",".join(("IP:" if n.replace(".", "").isdigit() else "DNS:") + n for n in names)
+        ext = os.path.join(directory, stem + ".ext")
+        with open(ext, "w", encoding="ascii") as f:
+            f.write("basicConstraints=critical,CA:FALSE\n"
+                    "keyUsage=critical,digitalSignature,keyEncipherment\n"
+                    "extendedKeyUsage=serverAuth\n"
+                    "subjectKeyIdentifier=hash\n"
+                    "authorityKeyIdentifier=keyid\n"
+                    f"subjectAltName={alt}\n")
+        csr = os.path.join(directory, stem + ".csr")
+        run("req", "-new", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", paths[stem + ".key"], "-out", csr, "-subj", "/CN=" + names[0])
+        run("x509", "-req", "-in", csr, "-CA", paths["ca.pem"], "-CAkey", paths["ca.key"],
+            "-CAcreateserial", "-days", "7", "-sha256", "-extfile", ext,
+            "-out", paths[stem + ".pem"])
+
+    make_ca("ca", "OpenAlgo MATLAB test CA")
+    make_leaf("server", SERVER_NAMES)
+    make_leaf("wrongname", WRONG_NAMES)
+    make_ca("other-ca", "Unrelated test CA")
+
+
+def openssl_config(directory, ext_file):
+    """A minimal openssl req config whose v3_ca_test section holds ext_file."""
+    path = ext_file + ".cnf"
+    with open(ext_file, encoding="ascii") as f:
+        ext = f.read()
+    with open(path, "w", encoding="ascii") as f:
+        f.write("[req]\ndistinguished_name=dn\n[dn]\n[v3_ca_test]\n" + ext)
+    return path
 
 
 async def main(args):
@@ -438,22 +544,27 @@ async def main(args):
             process_request=make_process_request(state), compression=None))
         port = list(server.sockets)[0].getsockname()[1]
         tls_port = 0
+        wrong_port = 0
         if args.tls_port >= 0:
-            cert_path, key_path = make_self_signed(args.tls_dir or tempfile.mkdtemp(prefix="mockws"))
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            ctx.load_cert_chain(cert_path, key_path)
-            tls_server = await stack.enter_async_context(serve(
-                conn_handler, args.host, args.tls_port, ssl=ctx,
-                process_request=make_process_request(state), compression=None))
-            tls_port = list(tls_server.sockets)[0].getsockname()[1]
-            print(f"mock server listening on wss://{args.host}:{tls_port}", flush=True)
+            pki = make_test_pki(args.tls_dir or tempfile.mkdtemp(prefix="mockws"))
+            listeners = []
+            for stem, wanted in (("server", args.tls_port), ("wrongname", 0)):
+                ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                ctx.load_cert_chain(pki[stem + ".pem"], pki[stem + ".key"])
+                tls_server = await stack.enter_async_context(serve(
+                    conn_handler, args.host, wanted, ssl=ctx,
+                    process_request=make_process_request(state), compression=None))
+                listeners.append(list(tls_server.sockets)[0].getsockname()[1])
+            tls_port, wrong_port = listeners
+            print(f"mock server listening on wss://{args.host}:{tls_port} "
+                  f"(wrong name on {wrong_port})", flush=True)
         if args.pid_file:
             with open(args.pid_file, "w", encoding="utf-8") as f:
                 f.write(str(os.getpid()))
         if args.ready_file:
             tmp = args.ready_file + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
-                f.write(f"{port}\n{tls_port}\n")
+                f.write(f"{port}\n{tls_port}\n{wrong_port}\n")
             os.replace(tmp, args.ready_file)
         print(f"mock server listening on {args.host}:{port}", flush=True)
         try:
@@ -470,7 +581,7 @@ def parse_args(argv):
     p.add_argument("--pid-file", default="", help="file that receives the process id")
     p.add_argument("--tls-port", type=int, default=-1,
                    help="also serve wss:// on this port (0 picks a free port, -1 disables)")
-    p.add_argument("--tls-dir", default="", help="directory for the self-signed certificate")
+    p.add_argument("--tls-dir", default="", help="directory for the test CA and certificates")
     p.add_argument("--record", default="", help="JSON lines file for received frames")
     p.add_argument("--api-key", default="test-api-key", help="the key that authenticates")
     p.add_argument("--no-auto-push", dest="auto_push", action="store_false",

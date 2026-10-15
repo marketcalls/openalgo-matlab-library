@@ -3076,6 +3076,15 @@ The server certificate and host name are always verified, with every provider. A
 none is available, `connect()` returns `false` and, at `verbose=1`, logs which options
 exist.
 
+If your server's certificate comes from a private CA (not one the operating system
+trusts), give the client that CA as a PEM file before `connect()`. It is trusted in
+addition to the system trust store, and the host name is still checked:
+
+```matlab
+client.tls_ca_file = "C:\certs\my-private-ca.pem";
+client.connect();
+```
+
 ### How the feed runs in MATLAB
 
 MATLAB runs your code on one thread. Where the Python SDK reads the WebSocket on a
@@ -3709,9 +3718,11 @@ The tests come in three kinds:
   (`tests/support/mock_ws_server.py`), which needs the Python `websockets` package
   (`python -m pip install websockets`). Every feed scenario runs over `ws://` and over
   `wss://` with each TLS provider (.NET, the Python interface and Java); a provider that
-  is not available in the session is skipped. The `wss://` mock uses a self-signed
-  certificate made at start-up (with the Python `cryptography` package, or the `openssl`
-  tool), and one test checks that the default certificate verification rejects it.
+  is not available in the session is skipped. The `wss://` mock makes a test CA at
+  start-up (with the Python `cryptography` package, or the `openssl` tool) and the
+  clients trust it through `tls_ca_file`, so verification stays on. Further tests check
+  that the default trust store, an unrelated CA and a certificate for another host name
+  are all rejected.
   `OPENALGO_TEST_PYENV` names the Python interpreter for the Python TLS provider.
 - **Live tests** (`LiveSandboxTest`) talk to a real OpenAlgo server. They run only when
   the `OPENALGO_API_KEY` environment variable is set, and they read the server address

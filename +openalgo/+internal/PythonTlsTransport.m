@@ -3,7 +3,9 @@ classdef PythonTlsTransport < handle
     %   Cross-platform fallback when .NET is not available (macOS, Linux).
     %   Uses ssl.create_default_context().wrap_socket(socket.create_connection(...),
     %   server_hostname=host), so the host name is sent (SNI) and the
-    %   certificate is verified against the default trust store.
+    %   certificate chain and host name are verified against the default
+    %   trust store, plus the CA certificates of CaFile when given
+    %   (load_verify_locations).
     %
     %   Reads are non-blocking: the socket timeout is 0 while reading and
     %   ssl.SSLWantReadError (an incomplete TLS record) means no data yet.
@@ -21,6 +23,7 @@ classdef PythonTlsTransport < handle
         Name = 'python'
         Error = ''
         Verify = true
+        CaFile = ''
     end
 
     properties (Access = private)
@@ -61,9 +64,12 @@ classdef PythonTlsTransport < handle
     end
 
     methods
-        function obj = PythonTlsTransport(verify)
+        function obj = PythonTlsTransport(verify, caFile)
             if nargin >= 1
                 obj.Verify = logical(verify);
+            end
+            if nargin >= 2
+                obj.CaFile = char(caFile);
             end
         end
 
@@ -71,6 +77,9 @@ classdef PythonTlsTransport < handle
             try
                 raw = py.socket.create_connection(py.tuple({char(host), int32(port)}), double(timeout));
                 ctx = py.ssl.create_default_context();
+                if ~isempty(obj.CaFile)
+                    ctx.load_verify_locations(pyargs('cafile', obj.CaFile));
+                end
                 if ~obj.Verify
                     py.setattr(ctx, 'check_hostname', false);
                     py.setattr(ctx, 'verify_mode', py.ssl.CERT_NONE);

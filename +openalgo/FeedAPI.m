@@ -40,7 +40,10 @@ classdef FeedAPI < handle
     %       ws_url, for example 'wss://openalgo.example.com/ws'. TLS needs
     %       one of: .NET (Windows, used first), the MATLAB Python interface
     %       with a supported Python (see pyenv), or the JVM. The server
-    %       certificate and host name are always verified.
+    %       certificate and host name are always verified. For a server
+    %       whose certificate comes from a private CA, set
+    %       client.tls_ca_file to a PEM file with that CA before connect();
+    %       it is trusted in addition to the system trust store.
     %
     %   Instruments:
     %       A cell array of structs or a struct array with fields exchange
@@ -113,6 +116,7 @@ classdef FeedAPI < handle
         log_sink = []                       % optional function handle that receives each log line instead of stdout
         tls_transport = 'auto'              % wss:// transport: 'auto', 'dotnet', 'python' or 'java'
         tls_verify = true                   % verify server certificates; false only for tests with self-signed certificates
+        tls_ca_file = ''                    % PEM file of extra trusted CA certificates (private CA); the host name is still verified
     end
 
     properties (Constant, Hidden)
@@ -994,7 +998,8 @@ classdef FeedAPI < handle
                 try
                     client = openalgo.internal.WebSocketClient(obj.ws_url, ...
                         'PingInterval', obj.ping_interval, 'PingTimeout', obj.ping_timeout, ...
-                        'TlsTransport', obj.tls_transport, 'VerifyCertificate', obj.tls_verify);
+                        'TlsTransport', obj.tls_transport, 'VerifyCertificate', obj.tls_verify, ...
+                        'CaFile', obj.tls_ca_file);
                     client.open(5);
                 catch err
                     % Python: on_error, then on_close, then the connect wait gives up.

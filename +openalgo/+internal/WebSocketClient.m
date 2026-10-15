@@ -9,7 +9,7 @@ classdef WebSocketClient < handle
     %               openalgo.internal.PythonTlsTransport  (Python interface)
     %               openalgo.internal.JavaTlsTransport    (JVM)
     %   Every TLS transport sends the host name (SNI) and verifies the
-    %   server certificate.
+    %   server certificate chain and host name.
     %
     %   The client is non-blocking after the opening handshake: call poll()
     %   regularly to read whatever bytes have arrived. poll() answers pings,
@@ -24,7 +24,11 @@ classdef WebSocketClient < handle
     %       TlsTransport       'auto' (default), 'dotnet', 'python' or 'java'
     %       VerifyCertificate  true (default). false accepts any certificate
     %                          and is meant only for tests with self-signed
-    %                          certificates.
+    %                          certificates (not possible with Java).
+    %       CaFile             PEM file with one or more CA certificates that
+    %                          are trusted in addition to the system trust
+    %                          store, for a server with a private CA. The host
+    %                          name is still verified.
     %
     %   Example:
     %       c = openalgo.internal.WebSocketClient('ws://127.0.0.1:8765');
@@ -61,6 +65,7 @@ classdef WebSocketClient < handle
         PumpBusy = false        % re-entrancy guard owned by the feed
         TlsTransport = 'auto'   % 'auto', 'dotnet', 'python' or 'java'
         VerifyCertificate = true % false only for tests with self-signed certificates
+        CaFile = ''              % extra trusted CA certificates (PEM file)
     end
 
     properties (Access = private)
@@ -130,6 +135,8 @@ classdef WebSocketClient < handle
                         obj.TlsTransport = lower(char(varargin{k + 1}));
                     case 'verifycertificate'
                         obj.VerifyCertificate = logical(varargin{k + 1});
+                    case 'cafile'
+                        obj.CaFile = char(varargin{k + 1});
                     otherwise
                         error('openalgo:WebSocketClient:badOption', 'Unknown option: %s', name);
                 end
@@ -357,7 +364,7 @@ classdef WebSocketClient < handle
         function connectTransport(obj, timeout)
             if strcmp(obj.Scheme, 'wss')
                 transport = openalgo.internal.WebSocketClient.makeTlsTransport( ...
-                    obj.TlsTransport, obj.VerifyCertificate);
+                    obj.TlsTransport, obj.VerifyCertificate, obj.CaFile);
             else
                 transport = openalgo.internal.TcpTransport();
             end
@@ -641,9 +648,13 @@ classdef WebSocketClient < handle
     end
 
     methods (Static, Access = private)
-        function transport = makeTlsTransport(choice, verify)
+        function transport = makeTlsTransport(choice, verify, caFile)
             % Pick the TLS byte transport: forced by choice, or the first
             % available of .NET, Python and Java.
+            caFile = char(caFile);
+            if ~isempty(caFile) && ~isfile(caFile)
+                error('openalgo:WebSocketClient:badOption', 'CA file not found: %s', caFile);
+            end
             choice = lower(char(choice));
             switch choice
                 case 'dotnet'
@@ -663,17 +674,17 @@ classdef WebSocketClient < handle
                 switch names{i}
                     case 'dotnet'
                         if openalgo.internal.DotNetTlsTransport.isAvailable()
-                            transport = openalgo.internal.DotNetTlsTransport(verify);
+                            transport = openalgo.internal.DotNetTlsTransport(verify, caFile);
                             return
                         end
                     case 'python'
                         if openalgo.internal.PythonTlsTransport.isAvailable(forced)
-                            transport = openalgo.internal.PythonTlsTransport(verify);
+                            transport = openalgo.internal.PythonTlsTransport(verify, caFile);
                             return
                         end
                     case 'java'
                         if openalgo.internal.JavaTlsTransport.isAvailable()
-                            transport = openalgo.internal.JavaTlsTransport(verify);
+                            transport = openalgo.internal.JavaTlsTransport(verify, caFile);
                             return
                         end
                 end
