@@ -1,0 +1,137 @@
+{
+ "description": "Known, justified differences from the Python reference. Each rule names the scenarios and diff paths it covers (\"*\" is a wildcard), the languages it applies to, a predicate the actual value must satisfy, and the reason. Predicates: any, nonempty_string, naive_as_utc, tz_alias, jsondecode_equivalent, {\"regex\": \"...\"} (applied to the actual value).",
+ "rules": [
+  {
+   "id": "missing-required-argument-text",
+   "scenarios": [
+    "orders.placeorder.missing_symbol",
+    "strategyapi.strategystart.missing_mode",
+    "options.optionsmultiorder.missing_strategy"
+   ],
+   "paths": [
+    "outcome.message"
+   ],
+   "langs": [
+    "r",
+    "matlab"
+   ],
+   "predicate": {
+    "regex": "(?i)^(?!.*(unrecognized method|no method or field named|undefined function)).*\\S"
+   },
+   "reason": "Python raises TypeError with its own wording (it names the Python function). R and MATLAB raise their native missing-argument error. That the call raises, and that no request is sent, is still compared. The predicate rejects messages saying the method itself does not exist."
+  },
+  {
+   "id": "host-exception-text-non-object-body",
+   "scenarios": [
+    "errors.A.array_body",
+    "errors.A.string_json_body",
+    "errors.A.utilities_array_body"
+   ],
+   "paths": [
+    "outcome.value.message"
+   ],
+   "langs": [
+    "r",
+    "matlab"
+   ],
+   "predicate": {
+    "regex": "^(?!Error processing response)\\S.*"
+   },
+   "reason": "For a 200 JSON body that is not an object the Python handler fails inside data.get() and returns str(AttributeError), e.g. \"'list' object has no attribute 'get'\". The text is a Python interpreter message; status and error_type (unknown_error) are still compared. The 'Error processing response:' prefix of the utilities module is rejected because in the combined api class the order module's handler wins the method resolution order and never adds it."
+  },
+  {
+   "id": "transport-error-text-after-prefix",
+   "scenarios": [
+    "errors.A.disconnect",
+    "errors.B.disconnect",
+    "webhook.disconnect"
+   ],
+   "paths": [
+    "outcome.value.message"
+   ],
+   "langs": [
+    "r",
+    "matlab"
+   ],
+   "predicate": {
+    "regex": "^HTTP error occurred: .+"
+   },
+   "reason": "The text after the fixed 'HTTP error occurred: ' prefix is the HTTP library's own exception message (httpx in Python, libcurl in R, the MATLAB HTTP stack). The prefix, status and error_type are still compared."
+  },
+  {
+   "id": "history-processing-error-text",
+   "scenarios": [
+    "data.history.processing_error"
+   ],
+   "paths": [
+    "outcome.value.message"
+   ],
+   "langs": [
+    "r",
+    "matlab"
+   ],
+   "predicate": {
+    "regex": "^Failed to process historical data: .+"
+   },
+   "reason": "The text after the fixed prefix is the host exception (Python prints KeyError('timestamp') as 'timestamp' in quotes). error_type and raw_data are still compared."
+  },
+  {
+   "id": "r-naive-daily-timestamps-as-utc",
+   "scenarios": [
+    "data.history.daily"
+   ],
+   "paths": [
+    "outcome.value.records[*].timestamp",
+    "outcome.value.tz.timestamp"
+   ],
+   "langs": [
+    "r"
+   ],
+   "predicate": "naive_as_utc",
+   "reason": "For D/W/M intervals pandas returns naive timestamps (the unix seconds read as UTC wall time, no zone). R has no naive date-time class, so POSIXct in UTC is the faithful equivalent: same instant and same wall-clock text, only the zone label differs."
+  },
+  {
+   "id": "matlab-kolkata-calcutta-alias",
+   "scenarios": [
+    "data.history.*"
+   ],
+   "paths": [
+    "outcome.value.tz.*"
+   ],
+   "langs": [
+    "matlab"
+   ],
+   "predicate": "tz_alias",
+   "reason": "MATLAB's time zone database reports Asia/Kolkata by its legacy IANA link name Asia/Calcutta. Both names denote the same zone; the ISO timestamps with their +05:30 offsets are still compared exactly."
+  },
+  {
+   "id": "matlab-jsondecode-null-and-singleton",
+   "scenarios": [
+    "*"
+   ],
+   "paths": [
+    "outcome.value*"
+   ],
+   "langs": [
+    "matlab"
+   ],
+   "predicate": "jsondecode_equivalent",
+   "reason": "The MATLAB client decodes responses with MATLAB's jsondecode, the platform convention. It has no null, so null becomes [] (tested with isempty), and a one-element array of objects becomes a 1x1 struct, which in MATLAB is the same value as a one-element struct array (numel is 1, r.data(1) works). The predicate accepts only these two collapses, recursively; every key, string, number and other array length must still match."
+  },
+  {
+   "id": "matlab-margin-scalar-struct-is-list",
+   "scenarios": [
+    "account.margin.not_a_list_object"
+   ],
+   "paths": [
+    "requests.count",
+    "outcome.value.*"
+   ],
+   "langs": [
+    "matlab"
+   ],
+   "predicate": "any",
+   "reason": "Python rejects a single dict as 'Positions must be an array'. In MATLAB a struct is a 1x1 struct array, and the documented positions argument accepts a struct array, so a single struct is a one-position list. The client sends a correct one-element positions array; the reported 404 only means this scenario defines no mock response, because Python sends nothing."
+  }
+ ]
+}

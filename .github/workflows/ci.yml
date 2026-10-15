@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: MATLAB tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # The REST and feed tests start local mock servers written in Python.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the feed mock server dependency
+        run: python -m pip install websockets
+
+      # Use R2026b when the action offers it, otherwise the latest release.
+      - name: Set up MATLAB R2026b
+        id: matlab_r2026b
+        continue-on-error: true
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: R2026b
+
+      - name: Set up the latest MATLAB release
+        if: steps.matlab_r2026b.outcome == 'failure'
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+
+      # LiveSandboxTest skips itself: no OPENALGO_API_KEY is set on CI.
+      - name: Run the test suite
+        uses: matlab-actions/run-command@v2
+        env:
+          OPENALGO_TEST_PYTHON: python
+        with:
+          command: addpath('tests'); runAllTests('test-results');
+
+      - name: Upload the JUnit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/junit.xml
+          if-no-files-found: ignore

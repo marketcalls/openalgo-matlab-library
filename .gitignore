@@ -1,0 +1,33 @@
+# MATLAB editor and session artifacts
+*.asv
+*.autosave
+*.m~
+*.mex*
+*.mat
+*.mlx~
+slprj/
+codegen/
+resources/project/
+
+# Build outputs
+release/
+.buildtool/
+*.mltbx
+*.prj.bak
+
+# Test output
+test-results/
+*.log
+junit*.xml
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Parity harness output
+tools/parity/out/
+tools/parity/scenarios.matlab.json
+
+# OS files
+.DS_Store
+Thumbs.db
