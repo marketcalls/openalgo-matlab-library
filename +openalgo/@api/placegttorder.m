@@ -18,7 +18,7 @@ function result = placegttorder(obj, varargin)
 %
 %   Parameters:
 %     strategy        - Strategy identifier, used as the broker correlation
-%                       id where supported. Default "Python".
+%                       id where supported. Default "MATLAB".
 %     symbol          - Trading symbol in OpenAlgo format. Required.
 %     action          - "BUY" or "SELL". For OCO it applies to both legs.
 %                       Required.
@@ -39,9 +39,9 @@ function result = placegttorder(obj, varargin)
 %                       triggerprice_sl; for OCO it is the target leg's
 %                       trigger. Default 0.
 %     stoploss        - OCO only: the stoploss leg's limit price.
-%                       Default [] (None).
+%                       Default [] (sent as null).
 %     target          - OCO only: the target leg's limit price.
-%                       Default [] (None).
+%                       Default [] (sent as null).
 %     Other name=value pairs are passed through unchanged.
 %
 %   GTT numeric fields go out as JSON numbers rather than the strings the
@@ -83,7 +83,7 @@ function result = placegttorder(obj, varargin)
 %   openalgo.api/gttorderbook.
 
 [a, kw] = openalgo.internal.parseArgs('placegttorder', varargin, ...
-    {'strategy', 'Python'; 'symbol', []; 'action', []; 'exchange', []; ...
+    {'strategy', 'MATLAB'; 'symbol', []; 'action', []; 'exchange', []; ...
      'trigger_type', 'SINGLE'; 'product', 'CNC'; 'quantity', 1; ...
      'price_type', 'LIMIT'; 'price', 0; 'triggerprice_sl', 0; 'triggerprice_tg', 0; ...
      'stoploss', []; 'target', []}, ...

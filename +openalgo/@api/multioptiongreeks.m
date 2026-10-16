@@ -2,7 +2,7 @@ function result = multioptiongreeks(obj, varargin)
 %MULTIOPTIONGREEKS Calculate option Greeks for up to 50 symbols in one request.
 %   RESULT = CLIENT.MULTIOPTIONGREEKS(symbols=SYMBOLS, interest_rate=R, expiry_time=T)
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/multioptiongreeks endpoint.
 %
 %   Calculates Black-76 Greeks and implied volatility for 1 to 50 option

@@ -1,8 +1,7 @@
 function [result, isTransport] = transportError(ME)
 %TRANSPORTERROR Map a MATLAB exception from an HTTP call to the SDK error struct.
 %   [RESULT, ISTRANSPORT] = openalgo.internal.transportError(ME) classifies
-%   an MException raised while sending a request with matlab.net.http, the
-%   way the Python SDK classifies httpx exceptions:
+%   an MException raised while sending a request with matlab.net.http:
 %
 %     timeout (connect or read)          -> timeout_error
 %     refused connection, unknown host   -> connection_error

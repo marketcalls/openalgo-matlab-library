@@ -2,7 +2,7 @@ function result = telegramstart(obj, varargin)
 %TELEGRAMSTART Start the Telegram bot.
 %   RESULT = CLIENT.TELEGRAMSTART()
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/telegram/start endpoint of the Telegram management surface.
 %
 %   Parameters:

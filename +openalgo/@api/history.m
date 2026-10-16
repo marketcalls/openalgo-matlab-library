@@ -22,11 +22,10 @@ function result = history(obj, varargin)
 %   Payload: apikey, symbol, exchange, interval, start_date, end_date,
 %   source, then the extra fields.
 %
-%   Returns a timetable on success (the MATLAB counterpart of the pandas
-%   DataFrame of the Python SDK). The row times (named timestamp) come
-%   from the epoch seconds in the response: in the Asia/Kolkata time zone
-%   for intraday intervals, and without a time zone for "D", "W" and "M"
-%   (clock time as returned, like the Python SDK). Rows are
+%   Returns a timetable on success. The row times (named timestamp)
+%   come from the epoch seconds in the response: in the Asia/Kolkata
+%   time zone for intraday intervals, and without a time zone for "D",
+%   "W" and "M" (clock time as returned). Rows are
 %   sorted by time and duplicate timestamps are removed, keeping the
 %   first. The other columns (open, high, low, close, volume, oi, ...)
 %   keep their names.
@@ -94,8 +93,8 @@ try
         times.TimeZone = 'Asia/Kolkata';
         times.Format = 'yyyy-MM-dd HH:mm:ssxxx';
     else
-        % Daily, weekly and monthly bars carry no time zone, like the
-        % zone-less pandas timestamps of the Python SDK.
+        % Daily, weekly and monthly bars carry no time zone (clock time as
+        % returned by the server).
         times.TimeZone = '';
         times.Format = 'yyyy-MM-dd HH:mm:ss';
     end

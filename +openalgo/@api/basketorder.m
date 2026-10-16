@@ -1,9 +1,9 @@
 function result = basketorder(obj, varargin)
 %BASKETORDER Place multiple orders simultaneously.
-%   RESULT = CLIENT.BASKETORDER(orders=ORDERS, strategy="Python")
+%   RESULT = CLIENT.BASKETORDER(orders=ORDERS, strategy="MATLAB")
 %
 %   Parameters:
-%     strategy - The trading strategy name. Default "Python".
+%     strategy - The trading strategy name. Default "MATLAB".
 %     orders   - List of orders, a cell array of structs or a struct
 %                array. Required. Each order has:
 %                  symbol    - Trading symbol. Required.
@@ -14,7 +14,7 @@ function result = basketorder(obj, varargin)
 %                  product   - Product type. Optional ("MIS").
 %                  price, trigger_price, disclosed_quantity - Optional.
 %                Numeric and logical scalar values inside an order are sent
-%                as text (Python str()); everything else as is.
+%                as text; everything else as is.
 %     Other name=value pairs are sent as extra fields, as text.
 %
 %   Payload: apikey, strategy, orders (always a JSON array), then the
@@ -33,7 +33,7 @@ function result = basketorder(obj, varargin)
 %   See also openalgo.api/placeorder, openalgo.api/splitorder.
 
 [a, kw] = openalgo.internal.parseArgs('basketorder', varargin, ...
-    {'strategy', 'Python'; 'orders', []}, {'orders'}, 0, true);
+    {'strategy', 'MATLAB'; 'orders', []}, {'orders'}, 0, true);
 
 [orders, isList] = openalgo.internal.toList(a.orders);
 if ~isList

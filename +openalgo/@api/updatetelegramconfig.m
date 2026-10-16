@@ -2,7 +2,7 @@ function result = updatetelegramconfig(obj, varargin)
 %UPDATETELEGRAMCONFIG Update the Telegram bot configuration.
 %   RESULT = CLIENT.UPDATETELEGRAMCONFIG(Name=Value)
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/telegram/config endpoint of the Telegram management surface.
 %
 %   Parameters (all optional; only the ones given are sent):

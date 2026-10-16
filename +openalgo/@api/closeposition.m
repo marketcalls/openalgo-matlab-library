@@ -1,9 +1,9 @@
 function result = closeposition(obj, varargin)
 %CLOSEPOSITION Close all open positions for a given strategy.
-%   RESULT = CLIENT.CLOSEPOSITION(strategy="Python")
+%   RESULT = CLIENT.CLOSEPOSITION(strategy="MATLAB")
 %
 %   Parameters:
-%     strategy - The trading strategy name. Default "Python".
+%     strategy - The trading strategy name. Default "MATLAB".
 %     Other name=value pairs are sent as extra fields, as text.
 %
 %   Payload: apikey, strategy, then the extra fields.
@@ -16,7 +16,7 @@ function result = closeposition(obj, varargin)
 %   See also openalgo.api/cancelallorder, openalgo.api/positionbook.
 
 [a, kw] = openalgo.internal.parseArgs('closeposition', varargin, ...
-    {'strategy', 'Python'}, {}, 0, true);
+    {'strategy', 'MATLAB'}, {}, 0, true);
 
 payload = struct();
 payload.apikey = obj.api_key;

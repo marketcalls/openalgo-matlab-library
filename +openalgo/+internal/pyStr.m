@@ -1,5 +1,5 @@
 function s = pyStr(x)
-%PYSTR Text the way Python str() renders the equivalent value.
+%PYSTR Text form of a value, as sent in text payload fields.
 %   S = openalgo.internal.pyStr(X) returns a character vector:
 %
 %     pyStr("SBIN")  -> 'SBIN'      pyStr(10)     -> '10'
@@ -8,10 +8,10 @@ function s = pyStr(x)
 %     pyStr(NaN)     -> 'nan'       pyStr(Inf)    -> 'inf'
 %
 %   Whole numbers are never written in scientific notation (a MATLAB
-%   double that holds a whole number stands for a Python int). Other
-%   numbers use the shortest text that reads back as the same value, like
-%   Python repr. Lists (cell arrays, non-scalar arrays) and dicts (structs)
-%   are rendered in Python list and dict syntax.
+%   double that holds a whole number is treated as an integer). Other
+%   numbers use the shortest text that reads back as the same value.
+%   Lists (cell arrays, non-scalar arrays) are rendered as ['a', 1] and
+%   objects (structs) as {'key': 'value'}.
 
 if openalgo.internal.isNone(x)
     s = 'None';
@@ -89,7 +89,7 @@ end
 end
 
 function s = shortest(x)
-% Shortest round-trip text, as Python repr does for floats.
+% Shortest text that reads back as the same value.
 if isa(x, 'single')
     for prec = 6:9
         s = sprintf('%.*g', prec, x);
@@ -108,7 +108,7 @@ end
 end
 
 function s = pyRepr(x)
-% Python repr of a list or dict like value.
+% Literal text of a value inside a list or object: text quoted.
 if ischar(x)
     if size(x, 1) <= 1
         s = quoteStr(x);

@@ -1,10 +1,10 @@
 function [ok, value, typeName] = decodeJson(text)
-%DECODEJSON Decode JSON text, reporting the Python type of the top value.
+%DECODEJSON Decode JSON text, reporting the JSON type of the top value.
 %   [OK, VALUE, TYPENAME] = openalgo.internal.decodeJson(TEXT) decodes TEXT
-%   with jsondecode. OK is false when TEXT is not valid JSON (Python
-%   response.json() raising ValueError). TYPENAME is the Python type name
-%   json.loads would produce for the top level value: 'dict', 'list',
-%   'str', 'int', 'float', 'bool' or 'NoneType'. It is needed because
+%   with jsondecode. OK is false when TEXT is not valid JSON. TYPENAME
+%   names the type of the top level value: 'dict' (object), 'list'
+%   (array), 'str', 'int', 'float', 'bool' or 'NoneType' (null), the
+%   names used in the error messages. It is needed because
 %   jsondecode returns the same MATLAB struct for {"a":1} and [{"a":1}].
 
 ok = false;

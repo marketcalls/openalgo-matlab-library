@@ -3,7 +3,7 @@ function result = placesmartorder(obj, varargin)
 %   RESULT = CLIENT.PLACESMARTORDER(Name=Value)
 %
 %   Parameters:
-%     strategy      - The trading strategy name. Default "Python".
+%     strategy      - The trading strategy name. Default "MATLAB".
 %     symbol        - Trading symbol. Required.
 %     action        - "BUY" or "SELL". Required.
 %     exchange      - Exchange code. Required.
@@ -22,14 +22,14 @@ function result = placesmartorder(obj, varargin)
 %   Returns the JSON response as a struct.
 %
 %   Example:
-%     resp = client.placesmartorder(strategy="Python", symbol="TATAMOTORS", ...
+%     resp = client.placesmartorder(strategy="MATLAB Strategy", symbol="TATAMOTORS", ...
 %         action="SELL", exchange="NSE", price_type="MARKET", product="MIS", ...
 %         quantity=1, position_size=5);
 %
 %   See also openalgo.api/placeorder.
 
 [a, kw] = openalgo.internal.parseArgs('placesmartorder', varargin, ...
-    {'strategy', 'Python'; 'symbol', []; 'action', []; 'exchange', []; ...
+    {'strategy', 'MATLAB'; 'symbol', []; 'action', []; 'exchange', []; ...
      'price_type', 'MARKET'; 'product', 'MIS'; 'quantity', 1; 'position_size', []}, ...
     {'symbol', 'action', 'exchange', 'position_size'}, 0, true);
 

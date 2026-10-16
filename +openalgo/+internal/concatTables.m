@@ -1,5 +1,5 @@
 function T = concatTables(tables)
-%CONCATTABLES Stack tables whose columns may differ, like pandas.concat.
+%CONCATTABLES Stack tables whose columns may differ.
 %   T = openalgo.internal.concatTables(TABLES) vertically concatenates the
 %   tables in the cell array TABLES. The result has the union of the
 %   columns in order of first appearance; a column missing from a table is

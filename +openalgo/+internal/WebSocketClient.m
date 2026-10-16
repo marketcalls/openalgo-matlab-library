@@ -650,7 +650,7 @@ classdef WebSocketClient < handle
     methods (Static, Access = private)
         function transport = makeTlsTransport(choice, verify, caFile)
             % Pick the TLS byte transport: forced by choice, or the first
-            % available of .NET, Python and Java.
+            % available of .NET, the MATLAB Python interface and Java.
             caFile = char(caFile);
             if ~isempty(caFile) && ~isfile(caFile)
                 error('openalgo:WebSocketClient:badOption', 'CA file not found: %s', caFile);

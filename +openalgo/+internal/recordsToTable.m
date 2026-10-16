@@ -1,7 +1,7 @@
 function T = recordsToTable(records)
 %RECORDSTOTABLE Convert a decoded list of JSON records into a table.
-%   T = openalgo.internal.recordsToTable(RECORDS) works like
-%   pandas.DataFrame(list_of_dicts). RECORDS is what jsondecode returns for
+%   T = openalgo.internal.recordsToTable(RECORDS) builds one row per
+%   record and one column per key. RECORDS is what jsondecode returns for
 %   a JSON array of objects: a struct array (all objects share their keys)
 %   or a cell array of structs (keys differ). Columns appear in order of
 %   first appearance and a key missing from a record becomes a missing

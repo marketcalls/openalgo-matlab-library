@@ -1,11 +1,11 @@
 function result = cancelgttorder(obj, varargin)
 %CANCELGTTORDER Cancel an active GTT trigger.
-%   RESULT = CLIENT.CANCELGTTORDER(trigger_id=ID, strategy="Python")
+%   RESULT = CLIENT.CANCELGTTORDER(trigger_id=ID, strategy="MATLAB")
 %
 %   Parameters:
 %     trigger_id - The trigger to cancel. Required. Sent as text.
 %     strategy   - Strategy identifier, recorded in event logs.
-%                  Default "Python".
+%                  Default "MATLAB".
 %     Other name=value pairs are passed through unchanged.
 %
 %   Payload: apikey, strategy, trigger_id, then the extra fields.
@@ -25,7 +25,7 @@ function result = cancelgttorder(obj, varargin)
 %   See also openalgo.api/placegttorder, openalgo.api/gttorderbook.
 
 [a, kw] = openalgo.internal.parseArgs('cancelgttorder', varargin, ...
-    {'trigger_id', []; 'strategy', 'Python'}, {'trigger_id'}, 0, true);
+    {'trigger_id', []; 'strategy', 'MATLAB'}, {'trigger_id'}, 0, true);
 
 payload = struct();
 payload.apikey = obj.api_key;

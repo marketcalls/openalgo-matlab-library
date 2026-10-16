@@ -1,7 +1,7 @@
 classdef AdditionalEndpointsTest < RestTestCase
-    %ADDITIONALENDPOINTSTEST Methods for server endpoints that the Python
-    %   SDK lacks: ping, pnlsymbols, multioptiongreeks, ticker, chart,
-    %   updatechart and the Telegram management surface.
+    %ADDITIONALENDPOINTSTEST Utility and management methods: ping,
+    %   pnlsymbols, multioptiongreeks, ticker, chart, updatechart and the
+    %   Telegram management surface.
 
     methods (Test)
         function pingAndPnlsymbols(tc)

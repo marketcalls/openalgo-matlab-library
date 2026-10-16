@@ -2,7 +2,7 @@ function result = pnlsymbols(obj, varargin)
 %PNLSYMBOLS Get today's sandbox P&L broken down by symbol.
 %   RESULT = CLIENT.PNLSYMBOLS()
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/pnl/symbols endpoint.
 %
 %   Returns today's realized and unrealized P&L for the open sandbox

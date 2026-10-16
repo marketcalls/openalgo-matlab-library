@@ -2,7 +2,7 @@ function result = telegramusers(obj, varargin)
 %TELEGRAMUSERS List the users linked to the Telegram bot.
 %   RESULT = CLIENT.TELEGRAMUSERS(broker=B, notifications_enabled=TF)
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   GET /api/v1/telegram/users endpoint of the Telegram management surface.
 %
 %   Parameters (optional filters, sent as query parameters when given):

@@ -1,11 +1,10 @@
 classdef JsonFloat
-%JSONFLOAT Marks a number that the Python SDK sends as a float.
+%JSONFLOAT Marks a number that is sent as a JSON float.
 %   F = openalgo.internal.JsonFloat(V) wraps the double V for a request
-%   payload. openalgo.internal.toJson writes it the way Python json.dumps
-%   writes a float, so a whole number keeps its decimal point (700.0, not
-%   700). The Python SDK produces floats with float() in the GTT payload
-%   and in the option legs; MATLAB has no separate float type, so this
-%   wrapper keeps those payloads identical. It is internal: it never
+%   payload. openalgo.internal.toJson writes it as a float, so a whole
+%   number keeps its decimal point (700.0, not 700). The GTT payload and
+%   the option legs send some numbers as floats; MATLAB has no separate
+%   float type, so this wrapper marks them. It is internal: it never
 %   appears in values returned to the caller.
 
     properties
@@ -19,7 +18,7 @@ classdef JsonFloat
         end
 
         function txt = jsonText(obj)
-            %JSONTEXT The JSON number text Python json.dumps writes for this float.
+            %JSONTEXT The JSON number text of this float (shortest form, with a decimal point).
             v = obj.Value;
             if isnan(v) || isinf(v)
                 txt = 'null';

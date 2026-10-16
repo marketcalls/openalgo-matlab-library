@@ -1,7 +1,7 @@
 function [c, isList] = toList(x)
 %TOLIST Normalize a list-like value to a 1-by-N cell array.
 %   [C, ISLIST] = openalgo.internal.toList(X) accepts the MATLAB spellings
-%   of a Python list of dicts or values:
+%   of a list of objects or values:
 %
 %     cell array {s1, s2}      -> {s1, s2}
 %     struct array [s1 s2]     -> {s1, s2}   (a 1-by-1 struct gives {s1})
@@ -9,7 +9,7 @@ function [c, isList] = toList(x)
 %     numeric or logical array -> one element per entry
 %
 %   ISLIST is false (and C is {}) for values that are not list-like, such
-%   as None ([]), a char vector or a scalar string. A list encodes as a
+%   as [], a char vector or a scalar string. A list encodes as a
 %   JSON array even when it has one element.
 
 isList = true;

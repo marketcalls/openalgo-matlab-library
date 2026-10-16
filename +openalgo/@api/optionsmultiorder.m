@@ -125,7 +125,7 @@ result = obj.makeRequest('optionsmultiorder', payload);
 end
 
 function v = field(leg, name)
-% leg["name"]: raises like a Python KeyError when the key is missing.
+% leg.(name): raises openalgo:keyError when the key is missing.
 if ~isfield(leg, name)
     error('openalgo:keyError', '''%s''', name);
 end

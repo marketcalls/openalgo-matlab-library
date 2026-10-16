@@ -1,19 +1,18 @@
 function [p, kw] = parseArgs(fname, args, params, required, nPositional, allowKwargs)
-%PARSEARGS Parse Python-style positional and name=value arguments.
+%PARSEARGS Parse leading positional values and name=value arguments.
 %   [P, KW] = openalgo.internal.parseArgs(FNAME, ARGS, PARAMS, REQUIRED,
 %   NPOSITIONAL, ALLOWKWARGS) parses the cell array ARGS (usually varargin)
-%   against the declared parameters of the Python method FNAME.
+%   against the declared parameters of the method FNAME.
 %
-%   PARAMS is an N-by-2 cell array {name, default; ...} in Python order.
-%   A default of [] stands for Python None. REQUIRED is a cell array of the
+%   PARAMS is an N-by-2 cell array {name, default; ...} in declaration
+%   order. A default of [] means "not set". REQUIRED is a cell array of the
 %   names that must be supplied. The first NPOSITIONAL names may also be
 %   given as leading positional values; every other parameter is
-%   name=value only (Python keyword-only). Names are exact and
-%   case-sensitive.
+%   name=value only. Names are exact and case-sensitive.
 %
 %   When ALLOWKWARGS is true, name=value pairs whose name is not declared
 %   are returned in KW, a K-by-2 cell array {name, value; ...} in the order
-%   given (Python **kwargs). When it is false they raise
+%   given (extra payload fields). When it is false they raise
 %   openalgo:unexpectedArgument.
 %
 %   P is a struct with one field per declared parameter, holding the given
@@ -21,7 +20,7 @@ function [p, kw] = parseArgs(fname, args, params, required, nPositional, allowKw
 %
 %   Errors:
 %     openalgo:missingArgument    a required parameter was not supplied
-%     openalgo:unexpectedArgument an undeclared name on a method without **kwargs
+%     openalgo:unexpectedArgument an undeclared name on a method without extra fields
 %     openalgo:duplicateArgument  the same parameter was supplied twice
 %     openalgo:invalidArguments   the argument list cannot be parsed
 
@@ -43,7 +42,7 @@ maxK = min(nPositional, n);
 % starts a well formed name=value tail is a name, never a positional
 % value: otherwise a misspelled name later in the list, as in
 % api(api_key="k", hots="x"), would shift every pair into the positional
-% slots instead of raising the error Python raises.
+% slots instead of raising openalgo:unexpectedArgument.
 k = -1;
 for cand = 0:maxK
     if pairsValid(args(cand+1:end), names, allowKwargs, true) && ...
@@ -82,7 +81,7 @@ for i = k+1:2:n
     end
 end
 
-% Required parameters: Python reports missing positional ones first.
+% Required parameters: missing positional ones are reported first.
 missPos = {};
 missKw = {};
 for r = 1:numel(required)
@@ -108,7 +107,7 @@ end
 
 function tf = pairsValid(rest, names, allowKwargs, strict)
 % TRUE when REST is a list of name=value pairs. In strict mode an undeclared
-% name is only accepted when the method takes **kwargs.
+% name is only accepted when the method takes extra fields.
 tf = false;
 if mod(numel(rest), 2) ~= 0
     return
@@ -193,7 +192,7 @@ end
 end
 
 function s = joinNames(c)
-% Python style: 'a', 'a' and 'b', 'a', 'b', and 'c'
+% Name list: 'a', 'a' and 'b', 'a', 'b', and 'c'
 q = cellfun(@(x) ['''' x ''''], c, 'UniformOutput', false);
 switch numel(q)
     case 1

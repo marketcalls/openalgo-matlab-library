@@ -16,7 +16,7 @@ function results = runAllTests(outputFolder, include)
 %   summary, so "matlab -batch runAllTests('out')" exits with a nonzero
 %   status. Skipped (incomplete) tests do not count as failures.
 %
-%   The tests need Python 3 on the PATH as "python" (or named by
+%   The mock servers need Python 3 on the PATH as "python" (or named by
 %   OPENALGO_TEST_PYTHON); the feed tests also need its websockets
 %   package. Temporary files go to OPENALGO_TEST_TMP when set, else
 %   tempdir.

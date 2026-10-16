@@ -2,7 +2,7 @@ function result = updatetelegrampreferences(obj, varargin)
 %UPDATETELEGRAMPREFERENCES Update the notification preferences of a Telegram user.
 %   RESULT = CLIENT.UPDATETELEGRAMPREFERENCES(TELEGRAM_ID, Name=Value)
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/telegram/preferences endpoint of the Telegram management surface.
 %
 %   Parameters:

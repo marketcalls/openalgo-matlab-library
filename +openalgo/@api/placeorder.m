@@ -4,15 +4,15 @@ function result = placeorder(obj, varargin)
 %   parameters. All parameters are name=value.
 %
 %   Parameters:
-%     strategy    - The trading strategy name. Default "Python".
+%     strategy    - The trading strategy name. Default "MATLAB".
 %     symbol      - Trading symbol. Required.
 %     action      - "BUY" or "SELL". Required.
 %     exchange    - Exchange code. Required.
 %     price_type  - Type of price. Default "MARKET".
 %     product     - Product type. Default "MIS".
 %     quantity    - Quantity to trade. Default 1.
-%     Other name=value pairs are sent as extra fields, as text (Python
-%     str()), for example:
+%     Other name=value pairs are sent as extra fields, as text, for
+%     example:
 %       price              - Required for LIMIT orders.
 %       trigger_price      - Required for SL and SL-M orders.
 %       disclosed_quantity - Disclosed quantity.
@@ -27,13 +27,13 @@ function result = placeorder(obj, varargin)
 %   and status.
 %
 %   Example:
-%     resp = client.placeorder(strategy="Python", symbol="SBIN", action="BUY", ...
+%     resp = client.placeorder(strategy="MATLAB Strategy", symbol="SBIN", action="BUY", ...
 %         exchange="NSE", price_type="LIMIT", product="MIS", quantity=1, price=750);
 %
 %   See also openalgo.api/placesmartorder, openalgo.api/modifyorder.
 
 [a, kw] = openalgo.internal.parseArgs('placeorder', varargin, ...
-    {'strategy', 'Python'; 'symbol', []; 'action', []; 'exchange', []; ...
+    {'strategy', 'MATLAB'; 'symbol', []; 'action', []; 'exchange', []; ...
      'price_type', 'MARKET'; 'product', 'MIS'; 'quantity', 1}, ...
     {'symbol', 'action', 'exchange'}, 0, true);
 

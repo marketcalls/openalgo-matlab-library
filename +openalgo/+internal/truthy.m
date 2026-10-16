@@ -1,9 +1,7 @@
 function tf = truthy(x)
-%TRUTHY Python truthiness of a MATLAB value.
-%   TF = openalgo.internal.truthy(X) returns what Python's bool(x) returns
-%   for the equivalent Python value: false for None ([]), empty text,
-%   empty lists and dicts, zero and false; true otherwise (NaN is true,
-%   as in Python).
+%TRUTHY True when a value counts as set.
+%   TF = openalgo.internal.truthy(X) is false for [], empty text, empty
+%   lists and objects, zero and false; true otherwise (NaN is true).
 
 if openalgo.internal.isNone(x)
     tf = false;

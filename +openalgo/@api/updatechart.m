@@ -2,7 +2,7 @@ function result = updatechart(obj, varargin)
 %UPDATECHART Update the chart preferences stored for the API key.
 %   RESULT = CLIENT.UPDATECHART(Name=Value, ...)
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/chart endpoint.
 %
 %   Every name=value pair is one preference key and its value, sent as

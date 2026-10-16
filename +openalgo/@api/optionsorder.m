@@ -3,7 +3,7 @@ function result = optionsorder(obj, varargin)
 %   RESULT = CLIENT.OPTIONSORDER(Name=Value)
 %
 %   Parameters:
-%     strategy    - Strategy name. Default "Python".
+%     strategy    - Strategy name. Default "MATLAB".
 %     underlying  - Underlying symbol (e.g. NIFTY, BANKNIFTY,
 %                   NIFTY28OCT25FUT). Required.
 %     exchange    - Exchange code (NSE_INDEX, NSE, NFO, BSE_INDEX, BSE,
@@ -47,7 +47,7 @@ function result = optionsorder(obj, varargin)
 %   See also openalgo.api/optionsmultiorder, openalgo.api/optionsymbol.
 
 [a, kw] = openalgo.internal.parseArgs('optionsorder', varargin, ...
-    {'strategy', 'Python'; 'underlying', []; 'exchange', []; 'strike_int', []; ...
+    {'strategy', 'MATLAB'; 'underlying', []; 'exchange', []; 'strike_int', []; ...
      'offset', []; 'option_type', []; 'action', []; 'quantity', []; ...
      'expiry_date', []; 'price_type', 'MARKET'; 'product', 'MIS'}, ...
     {'underlying', 'exchange', 'offset', 'option_type', 'action', 'quantity'}, 0, true);

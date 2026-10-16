@@ -2,7 +2,7 @@ function result = ticker(obj, varargin)
 %TICKER Get historical candles from the ticker-compatible endpoint.
 %   RESULT = CLIENT.TICKER(symbol=S, exchange=X, interval="D", start_date=D1, end_date=D2, format="json")
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   GET /api/v1/ticker/<EXCHANGE>:<SYMBOL> endpoint.
 %
 %   The request is a GET to ticker/<EXCHANGE>:<SYMBOL> with the query

@@ -13,8 +13,7 @@ function result = instruments(obj, varargin)
 %   The request is a GET to instruments with apikey and exchange as query
 %   parameters.
 %
-%   Returns a table on success (the MATLAB counterpart of the pandas
-%   DataFrame of the Python SDK) with the columns symbol, brsymbol, name,
+%   Returns a table on success with the columns symbol, brsymbol, name,
 %   exchange, token, expiry, strike, lotsize, instrumenttype and tick_size.
 %
 %   On failure returns the error struct of the request, or:

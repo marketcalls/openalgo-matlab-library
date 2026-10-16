@@ -6,7 +6,7 @@ classdef FeedAPI < handle
     %   LTP (mode 1), Quote (mode 2) and Depth (mode 3) market data plus
     %   account level order updates.
     %
-    %   Methods (same names and parameters as the Python SDK):
+    %   Methods:
     %       connect, disconnect
     %       subscribe_ltp, unsubscribe_ltp
     %       subscribe_quote, unsubscribe_quote
@@ -14,7 +14,7 @@ classdef FeedAPI < handle
     %       subscribe_orders, unsubscribe_orders
     %       get_ltp, get_quotes, get_depth, get_orders
     %
-    %   Additions beyond the Python SDK (server features it lacks):
+    %   Feed utilities:
     %       wait                   process the feed for N seconds
     %       unsubscribe_all        drop every symbol subscription
     %       get_broker_info        broker name and adapter status
@@ -28,16 +28,17 @@ classdef FeedAPI < handle
     %       MATLAB runs your code on a single thread. The feed reads the
     %       socket from a MATLAB timer every 0.05 s, so callbacks run while
     %       MATLAB is idle at the prompt, during pause() and during
-    %       client.wait(). pause(10) therefore behaves like time.sleep(10)
-    %       in Python. A long running computation without pause() delays
+    %       client.wait(). pause(10) therefore keeps receiving data for
+    %       10 seconds. A long running computation without pause() delays
     %       the feed until it finishes. In matlab -batch scripts use
     %       client.wait(seconds) or pause(seconds) to keep receiving data.
     %       Call disconnect() when done: the timers hold a reference to the
     %       client until then.
     %
     %   Secure WebSocket (wss://):
-    %       A server hosted OpenAlgo usually serves wss:// only; pass it as
-    %       ws_url, for example 'wss://openalgo.example.com/ws'. TLS needs
+    %       A server hosted OpenAlgo serves wss:// only. Pass the https://
+    %       host and wss://<host>/ws is derived, or pass ws_url, for
+    %       example 'wss://openalgo.example.com/ws'. TLS needs
     %       one of: .NET (Windows, used first), the MATLAB Python interface
     %       with a supported Python (see pyenv), or the JVM. The server
     %       certificate and host name are always verified. For a server
@@ -88,7 +89,7 @@ classdef FeedAPI < handle
         order_data = {}         % order_update messages, most recent first (max 500)
         ltp_callback = []       % function handle called with each LTP update
         quote_callback = []     % function handle called with each Quote update
-        quotes_callback = []    % reserved, kept for parity with the Python SDK
+        quotes_callback = []    % reserved for future use
         depth_callback = []     % function handle called with each Depth update
         order_callback = []     % function handle called with each order update
         auto_reconnect = true   % reconnect and replay subscriptions after a drop
@@ -555,7 +556,6 @@ classdef FeedAPI < handle
             %   forgets all LTP, Quote and Depth subscriptions so a reconnect
             %   does not replay them, and clears the cached ltp, quote and
             %   depth data. The order update subscription is not changed.
-            %   Addition beyond the Python SDK.
             %
             %   Outputs:
             %       ok  true if the request was sent, false when not
@@ -592,7 +592,7 @@ classdef FeedAPI < handle
             %
             %   Sends {"action":"get_broker_info"} and keeps processing the
             %   feed (market data and callbacks continue) until the reply
-            %   arrives. Addition beyond the Python SDK.
+            %   arrives.
             %
             %   Inputs:
             %       timeout  seconds to wait (default 5)
@@ -617,8 +617,7 @@ classdef FeedAPI < handle
             %   reply = client.get_supported_brokers(timeout)
             %
             %   Sends {"action":"get_supported_brokers"} and keeps processing
-            %   the feed until the reply arrives. Addition beyond the Python
-            %   SDK.
+            %   the feed until the reply arrives.
             %
             %   Inputs:
             %       timeout  seconds to wait (default 5)
@@ -644,7 +643,7 @@ classdef FeedAPI < handle
             %   Sends {"action":"ping","timestamp":<epoch ms>} and waits for
             %   the server's pong while processing the feed. This is separate
             %   from the WebSocket control pings, which the client answers on
-            %   its own. Addition beyond the Python SDK.
+            %   its own.
             %
             %   Inputs:
             %       timeout  seconds to wait (default 5)
@@ -721,7 +720,7 @@ classdef FeedAPI < handle
 
     methods (Hidden)
         function feedProcessMessage(obj, messageStr)
-            %FEEDPROCESSMESSAGE Handle one incoming text message (Python _process_message).
+            %FEEDPROCESSMESSAGE Handle one incoming text message.
             messageStr = char(messageStr);
             try
                 message = jsondecode(messageStr);
@@ -800,7 +799,7 @@ classdef FeedAPI < handle
             %INITFEED Apply feed settings and reset the feed state.
             %   initFeed(obj, host, ws_port, ws_url, verbose, auto_reconnect)
             %   derives ws_url from host when ws_url is empty:
-            %     http:// host (or no scheme), as in the Python SDK: the
+            %     http:// host (or no scheme): the
             %       scheme is removed, the rest is cut at the first '/' and
             %       then at the first ':', giving ws://HOST:WS_PORT.
             %     https:// host (a server hosted OpenAlgo, which serves the
@@ -889,7 +888,7 @@ classdef FeedAPI < handle
 
     methods (Access = private)
         function logMsg(obj, level, category, message)
-            % Python _log: fixed width category then the message.
+            % Log line: fixed width category, then the message.
             if obj.verbose >= level
                 obj.emit(sprintf('%-8s %s', ['[' category ']'], message));
             end
@@ -991,7 +990,7 @@ classdef FeedAPI < handle
         end
 
         function ok = doConnect(obj)
-            % Open one connection and wait for authentication (Python _do_connect).
+            % Open one connection and wait for authentication.
             ok = false;
             try
                 obj.discardSocket();
@@ -1002,7 +1001,7 @@ classdef FeedAPI < handle
                         'CaFile', obj.tls_ca_file);
                     client.open(5);
                 catch err
-                    % Python: on_error, then on_close, then the connect wait gives up.
+                    % Log the error, run the close handling, then give up on this connect.
                     obj.logMsg(1, 'ERROR', ['WebSocket error: ' err.message]);
                     obj.onClosed();
                     obj.logMsg(1, 'ERROR', 'Failed to connect to WebSocket server');
@@ -1029,7 +1028,7 @@ classdef FeedAPI < handle
         end
 
         function authenticate(obj)
-            % Send the API key (Python _authenticate).
+            % Send the API key.
             if ~obj.connected
                 obj.logMsg(1, 'ERROR', 'Cannot authenticate: not connected');
                 return
@@ -1048,7 +1047,7 @@ classdef FeedAPI < handle
         end
 
         function onClosed(obj)
-            % Python on_close.
+            % Connection closed: log it, reset the state and reconnect if enabled.
             obj.logMsg(1, 'WS', ['Disconnected from ' obj.ws_url]);
             obj.connected = false;
             obj.authenticated = false;
@@ -1080,7 +1079,7 @@ classdef FeedAPI < handle
         end
 
         function scheduleReconnect(obj)
-            % Start a reconnect sequence unless one is running (Python _schedule_reconnect).
+            % Start a reconnect sequence unless one is running.
             if obj.shutting_down || ~obj.auto_reconnect
                 return
             end
@@ -1116,7 +1115,7 @@ classdef FeedAPI < handle
         end
 
         function runReconnectAttempt(obj)
-            % One iteration of the Python _reconnect_loop.
+            % One reconnect attempt, with exponential backoff between attempts.
             if obj.shutting_down || ~obj.reconnect_active
                 obj.reconnect_active = false;
                 return
@@ -1321,7 +1320,7 @@ classdef FeedAPI < handle
         end
 
         function handleMessage(obj, message)
-            % Body of the Python _process_message after json.loads.
+            % Dispatch one decoded message by its type.
             if ~isstruct(message) || ~isscalar(message)
                 error('''%s'' object has no attribute ''get''', openalgo.FeedAPI.pyTypeName(message));
             end
@@ -1697,7 +1696,7 @@ classdef FeedAPI < handle
         end
 
         function [ex, sym, ok] = feedSplitKey(key, exchange, symbol)
-            % Python: parts = key.split(":"); filters on parts[0] and parts[1].
+            % Split an EXCHANGE:SYMBOL key and match it against the filters.
             ex = '';
             sym = '';
             ok = false;
@@ -1759,7 +1758,7 @@ classdef FeedAPI < handle
         end
 
         function v = getf(s, name, default)
-            % Python dict.get for a scalar struct.
+            % Field of a scalar struct, or DEFAULT when it is missing.
             if isstruct(s) && isscalar(s) && isfield(s, name)
                 v = s.(name);
             else
@@ -1778,7 +1777,7 @@ classdef FeedAPI < handle
         end
 
         function tf = isTruthy(v)
-            % Python truthiness for the values the feed handles.
+            % False for empty values, zero and false; true otherwise.
             if isa(v, 'function_handle')
                 tf = true;
             elseif isempty(v)
@@ -1829,7 +1828,7 @@ classdef FeedAPI < handle
         end
 
         function s = pyStr(v)
-            % Python str() of a decoded JSON value.
+            % Text form of a decoded JSON value.
             if ischar(v)
                 s = reshape(v, 1, []);
             elseif isstring(v) && isscalar(v)
@@ -1844,7 +1843,8 @@ classdef FeedAPI < handle
         end
 
         function s = pyRepr(v)
-            % Python repr() of a decoded JSON value.
+            % Literal text of a decoded JSON value: text quoted, lists and
+            % objects in bracket syntax.
             if ischar(v)
                 s = openalgo.FeedAPI.pyQuote(reshape(v, 1, []));
             elseif isstring(v)

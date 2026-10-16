@@ -105,8 +105,8 @@ classdef Strategy < handle
 
         function close(obj)
             %CLOSE Release the HTTP resources used by the sender.
-            %   S.CLOSE() mirrors the Python close(). After it, send raises
-            %   an error, as the Python sender does on a closed client.
+            %   S.CLOSE() marks the sender as closed. After it, send raises
+            %   openalgo:clientClosed.
             obj.IsClosed = true;
         end
 

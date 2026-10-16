@@ -1,10 +1,10 @@
 function txt = toJson(value)
-%TOJSON Encode a payload as JSON text, the way Python json.dumps would.
+%TOJSON Encode a payload as JSON text.
 %   TXT = openalgo.internal.toJson(VALUE) uses jsonencode after mapping the
 %   MATLAB conventions of this library onto JSON:
 %
-%     []  (Python None)            -> null
-%     scalar struct (dict)         -> object, fields in order
+%     []  (not set)                -> null
+%     scalar struct                -> object, fields in order
 %     struct array or cell array   -> array (also with one element)
 %     char row or string scalar    -> string
 %     logical                      -> true or false
@@ -17,9 +17,9 @@ function txt = toJson(value)
 %
 %   Numbers are written here rather than by jsonencode, which switches to
 %   exponent notation for values from about 1e7 and writes 17 significant
-%   digits; Python json.dumps writes ints in full and floats in their
-%   shortest form. An empty cell array {} encodes as [] (an empty Python
-%   list) and struct() encodes as {} (an empty dict).
+%   digits; here integers are written in full and floats in their
+%   shortest form. An empty cell array {} encodes as [] (an empty list)
+%   and struct() encodes as {} (an empty object).
 
 numbers = {};
 prepared = prep(value);

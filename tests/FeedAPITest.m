@@ -7,8 +7,9 @@ classdef FeedAPITest < matlab.unittest.TestCase
     %   Run from the repository folder:
     %       results = runtests('tests/FeedAPITest.m'); disp(table(results))
     %
-    %   Needs Python 3 with the websockets package. The interpreter is
-    %   'python' on the PATH unless OPENALGO_TEST_PYTHON names another one.
+    %   The mock server needs Python 3 with the websockets package. The
+    %   interpreter is 'python' on the PATH unless OPENALGO_TEST_PYTHON
+    %   names another one.
     %   Temporary files (certificates, frame record, server log) go to
     %   OPENALGO_TEST_TMP when set, else tempdir, and are removed afterwards.
     %
@@ -465,7 +466,7 @@ classdef FeedAPITest < matlab.unittest.TestCase
             started = tic;
             ok = c.connect();
             tc.verifyFalse(ok);
-            tc.verifyGreaterThan(toc(started), 4.5);   % waits the full 5 s like Python
+            tc.verifyGreaterThan(toc(started), 4.5);   % waits the full 5 s
             tc.verifyFalse(c.authenticated);
             tc.verifyTrue(c.connected);
             tc.verifyTrue(cap.has('[ERROR]  Authentication failed: Invalid API key'));
@@ -506,7 +507,7 @@ classdef FeedAPITest < matlab.unittest.TestCase
             tc.verifyEqual(cap.Lines{end}, '[ERROR]  Failed to connect to WebSocket server');
             tc.verifyFalse(cap.has('Reconnect attempt'));
 
-            % With auto_reconnect the failed connect arms the reconnect loop, as in Python
+            % With auto_reconnect the failed connect arms the reconnect loop
             [c2, cap2] = tc.newClient('ws', 'Url', 'ws://127.0.0.1:1', 'AutoReconnect', true);
             tc.verifyFalse(c2.connect());
             tc.verifyTrue(cap2.has('[WS]     Reconnect attempt 1 in 1s...'));
@@ -973,7 +974,7 @@ classdef FeedAPITest < matlab.unittest.TestCase
         end
 
         function testPauseDrivesCallbacks(tc, Transport)
-            % The poll timer delivers data during pause(), like time.sleep in Python.
+            % The poll timer delivers data during pause().
             [c, ~] = tc.connectedClient(Transport);
             c.subscribe_ltp({struct('exchange', 'NSE', 'symbol', 'PAUSE')});
             started = tic;

@@ -1,9 +1,8 @@
 function v = pyFloat(x)
-%PYFLOAT Python float() of a scalar value.
+%PYFLOAT Convert a scalar value to a double.
 %   V = openalgo.internal.pyFloat(X) converts a number, logical or numeric
 %   text to a double, and raises openalgo:valueError (text that is not a
-%   number) or openalgo:typeError (anything else, including None) the way
-%   Python float() raises ValueError and TypeError.
+%   number) or openalgo:typeError (anything else, including []).
 
 if (isnumeric(x) || islogical(x)) && isscalar(x)
     v = double(x);

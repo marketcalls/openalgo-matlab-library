@@ -2,7 +2,7 @@ function result = ping(obj, varargin)
 %PING Check API connectivity and authentication.
 %   RESULT = CLIENT.PING()
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/ping endpoint.
 %
 %   Verifies that the API key resolves to an active broker session. This

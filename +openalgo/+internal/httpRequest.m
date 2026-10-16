@@ -15,8 +15,8 @@ function [code, text] = httpRequest(method, url, body, timeout, headers, query, 
 %
 %   CODE is the numeric HTTP status and TEXT the body decoded as UTF-8.
 %   Automatic response conversion is disabled, so TEXT is always the body
-%   exactly as received. Redirects are not followed (as in the Python
-%   client). Transport failures are raised as MATLAB exceptions; map them
+%   exactly as received. Redirects are not followed. Transport failures
+%   are raised as MATLAB exceptions; map them
 %   with openalgo.internal.transportError.
 
 if nargin < 5
@@ -39,11 +39,11 @@ if ~isempty(query) && isstruct(query) && ~isempty(fieldnames(query))
     for i = 1:numel(f)
         value = query.(f{i});
         if openalgo.internal.isNone(value)
-            continue   % None query values are left out, as httpx does
+            continue   % unset ([]) query values are left out
         elseif islogical(value) && isscalar(value)
             qtext = 'false';
             if value
-                qtext = 'true';   % httpx writes booleans in lower case
+                qtext = 'true';   % booleans are written in lower case
             end
         else
             qtext = openalgo.internal.pyStr(value);

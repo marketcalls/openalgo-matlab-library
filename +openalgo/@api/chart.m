@@ -2,7 +2,7 @@ function result = chart(obj, varargin)
 %CHART Read the chart preferences stored for the API key.
 %   RESULT = CLIENT.CHART()
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   GET /api/v1/chart endpoint.
 %
 %   Parameters:

@@ -1,10 +1,10 @@
 function result = orderstatus(obj, varargin)
 %ORDERSTATUS Get the current status of an order.
-%   RESULT = CLIENT.ORDERSTATUS(order_id=ID, strategy="Python")
+%   RESULT = CLIENT.ORDERSTATUS(order_id=ID, strategy="MATLAB")
 %
 %   Parameters:
 %     order_id - The ID of the order to check. Required.
-%     strategy - The trading strategy name. Default "Python".
+%     strategy - The trading strategy name. Default "MATLAB".
 %     Other name=value pairs are sent as extra fields, as text.
 %
 %   Payload: apikey, strategy, orderid, then the extra fields.
@@ -19,7 +19,7 @@ function result = orderstatus(obj, varargin)
 %   See also openalgo.api/orderbook, openalgo.api/placeorder.
 
 [a, kw] = openalgo.internal.parseArgs('orderstatus', varargin, ...
-    {'order_id', []; 'strategy', 'Python'}, {'order_id'}, 0, true);
+    {'order_id', []; 'strategy', 'MATLAB'}, {'order_id'}, 0, true);
 
 payload = struct();
 payload.apikey = obj.api_key;

@@ -130,7 +130,7 @@ classdef LiveSandboxTest < matlab.unittest.TestCase
             tc.record('history D', tt);
             if istimetable(tt)
                 times = tt.Properties.RowTimes;
-                tc.verifyEqual(times.TimeZone, '');   % zone-less, like the Python SDK
+                tc.verifyEqual(times.TimeZone, '');   % daily bars carry no time zone
                 tc.verifyTrue(issorted(times));
             else
                 tc.verifyTrue(tc.closedMarket(tt), ['history D: ' LiveSandboxTest.describe(tt)]);

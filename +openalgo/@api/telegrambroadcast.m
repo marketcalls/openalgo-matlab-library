@@ -2,7 +2,7 @@ function result = telegrambroadcast(obj, varargin)
 %TELEGRAMBROADCAST Broadcast a message to the linked Telegram users.
 %   RESULT = CLIENT.TELEGRAMBROADCAST(message=TEXT, filters=S)
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/telegram/broadcast endpoint of the Telegram management surface.
 %
 %   Parameters:

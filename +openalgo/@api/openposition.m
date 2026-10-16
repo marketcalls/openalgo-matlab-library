@@ -3,7 +3,7 @@ function result = openposition(obj, varargin)
 %   RESULT = CLIENT.OPENPOSITION(Name=Value)
 %
 %   Parameters:
-%     strategy - The trading strategy name. Default "Python".
+%     strategy - The trading strategy name. Default "MATLAB".
 %     symbol   - Trading symbol. Required.
 %     exchange - Exchange code. Required.
 %     product  - Product type. Required.
@@ -21,7 +21,7 @@ function result = openposition(obj, varargin)
 %   See also openalgo.api/positionbook.
 
 [a, kw] = openalgo.internal.parseArgs('openposition', varargin, ...
-    {'strategy', 'Python'; 'symbol', []; 'exchange', []; 'product', []}, ...
+    {'strategy', 'MATLAB'; 'symbol', []; 'exchange', []; 'product', []}, ...
     {'symbol', 'exchange', 'product'}, 0, true);
 
 payload = struct();

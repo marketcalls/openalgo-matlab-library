@@ -1,4 +1,0 @@
-{
- "description": "Parameters the MATLAB library takes positionally instead of as name=value pairs, keyed <target>.<method> (target is api or strategy). Listed names are passed first, in this order, and removed from the name=value list. Empty means every argument is passed as name=value. Run prepare_matlab.py after editing.",
- "positional": {}
-}

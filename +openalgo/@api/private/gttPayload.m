@@ -1,7 +1,7 @@
 function [payload, err] = gttPayload(apiKey, a, kw)
 %GTTPAYLOAD Build and validate the flat GTT body shared by place and modify.
-%   [PAYLOAD, ERR] = gttPayload(APIKEY, A, KW) mirrors the Python
-%   GTTAPI._gtt_payload. A holds the parsed GTT parameters and KW the
+%   [PAYLOAD, ERR] = gttPayload(APIKEY, A, KW) builds the GTT request
+%   body. A holds the parsed GTT parameters and KW the
 %   extra name=value pairs (passed through unchanged). On a bad SINGLE/OCO
 %   combination PAYLOAD is [] and ERR is the validation_error struct;
 %   otherwise ERR is [].
@@ -60,7 +60,7 @@ else
     tgLimit = [];
 end
 
-% Python: float(quantity) if float(quantity) % 1 else int(quantity)
+% A fractional quantity is sent as a float, a whole one as an integer.
 q = openalgo.internal.pyFloat(a.quantity);
 if openalgo.internal.truthy(mod(q, 1))
     quantity = openalgo.internal.JsonFloat(q);
@@ -87,7 +87,7 @@ payload = openalgo.internal.addKwargs(payload, kw, false);
 end
 
 function v = num(value, default)
-% Python _num: coerce to float, treating None and "" as unset.
+% Coerce to a number, treating [] and "" as unset.
 isText = (ischar(value) && size(value, 1) <= 1) || (isstring(value) && isscalar(value));
 if openalgo.internal.isNone(value) || (isText && strlength(string(value)) == 0)
     v = default;
@@ -97,7 +97,7 @@ v = openalgo.internal.pyFloat(value);
 end
 
 function v = asFloat(v)
-% Mark a float for JSON; None stays None.
+% Mark a float for JSON; [] stays [] (sent as null).
 if ~isempty(v)
     v = openalgo.internal.JsonFloat(v);
 end

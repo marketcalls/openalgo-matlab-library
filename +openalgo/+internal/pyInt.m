@@ -1,11 +1,10 @@
 function v = pyInt(x)
-%PYINT Python int() of a scalar value, as int64.
+%PYINT Convert a scalar value to an integer, as int64.
 %   V = openalgo.internal.pyInt(X) truncates a number toward zero, maps
 %   true/false to 1/0 and parses integer text, returning int64 so that the
-%   value is encoded as a JSON integer. Like Python int() it raises
-%   openalgo:valueError for text that is not an integer literal (such as
-%   '10.5') or for NaN and Inf, and openalgo:typeError for None and other
-%   types.
+%   value is encoded as a JSON integer. It raises openalgo:valueError for
+%   text that is not an integer literal (such as '10.5') or for NaN and
+%   Inf, and openalgo:typeError for [] and other types.
 
 if (isnumeric(x) || islogical(x)) && isscalar(x)
     if isinteger(x)

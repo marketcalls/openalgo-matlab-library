@@ -1,5 +1,5 @@
 function result = parsePostResponse(code, text, nonJsonAsHttp)
-%PARSEPOSTRESPONSE Response handling of Python BaseAPI._post and Strategy.send.
+%PARSEPOSTRESPONSE Response handling of BaseAPI.post and Strategy.send.
 %   RESULT = openalgo.internal.parsePostResponse(CODE, TEXT, NONJSONASHTTP)
 %   returns the decoded JSON object. A non-200 answer whose body is a JSON
 %   object is returned as is, with status set to 'error' when the server
@@ -34,7 +34,7 @@ if ~strcmp(typeName, 'dict')
 end
 
 if code ~= 200
-    % dict.setdefault('status', 'error') appends the key when it is absent.
+    % status is set to 'error' and appended only when it is absent.
     if ~isfield(data, 'status')
         data.status = 'error';
     end

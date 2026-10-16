@@ -22,7 +22,7 @@ classdef BaseAPI < handle
 %
 %   BaseAPI methods:
 %     close    - Release the HTTP resources. Later REST calls return an
-%                unknown_error, as in the Python SDK after close().
+%                unknown_error struct.
 %
 %   Every REST call returns a struct and never raises for server or
 %   network problems: failures come back as a struct with status 'error',
@@ -66,10 +66,9 @@ classdef BaseAPI < handle
 
         function close(obj)
             %CLOSE Release the HTTP resources used by the REST methods.
-            %   CLIENT.CLOSE() mirrors the Python close(). MATLAB opens a
+            %   CLIENT.CLOSE() marks the client as closed. MATLAB opens a
             %   connection per request, so there is no pool to drain; after
-            %   close() every REST call returns the error the Python SDK
-            %   returns on a closed client.
+            %   close() every REST call returns an unknown_error struct.
             obj.RestClientClosed = true;
         end
     end
@@ -77,9 +76,9 @@ classdef BaseAPI < handle
     methods (Access = protected)
         function result = makeRequest(obj, endpoint, payload)
             %MAKEREQUEST POST a JSON payload and run it through handleResponse.
-            %   RESULT = makeRequest(OBJ, ENDPOINT, PAYLOAD) is the Python
-            %   OrderAPI._make_request plus _handle_response. Transport
-            %   failures become timeout_error, connection_error, http_error
+            %   RESULT = makeRequest(OBJ, ENDPOINT, PAYLOAD) encodes PAYLOAD as
+            %   JSON, POSTs it with the JSON headers and passes the answer to
+            %   handleResponse. Transport failures become timeout_error, connection_error, http_error
             %   or unknown_error structs.
             url = [obj.base_url char(endpoint)];
             try
@@ -94,8 +93,8 @@ classdef BaseAPI < handle
 
         function result = post(obj, endpoint, payload)
             %POST POST a JSON payload and return the parsed body.
-            %   RESULT = post(OBJ, ENDPOINT, PAYLOAD) is the Python
-            %   BaseAPI._post used by the GTT and strategy module methods.
+            %   RESULT = post(OBJ, ENDPOINT, PAYLOAD) is the POST used by the
+            %   GTT and strategy module methods.
             %   A non-200 answer with a JSON object body is returned as is,
             %   with status defaulted to 'error' and code attached.
             url = [obj.base_url char(endpoint)];
@@ -112,8 +111,8 @@ classdef BaseAPI < handle
         function result = getRequest(obj, endpoint, params)
             %GETREQUEST GET with query parameters and run it through handleResponse.
             %   RESULT = getRequest(OBJ, ENDPOINT, PARAMS) sends PARAMS (a
-            %   struct) as the query string, without the JSON headers, as the
-            %   Python client.get call does. Transport failures are mapped
+            %   struct) as the query string, without the JSON headers.
+            %   Transport failures are mapped
             %   to the same error structs as makeRequest.
             [code, text, err] = obj.getRequestRaw(endpoint, params);
             if ~isempty(err)

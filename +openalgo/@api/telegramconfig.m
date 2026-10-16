@@ -2,7 +2,7 @@ function result = telegramconfig(obj, varargin)
 %TELEGRAMCONFIG Read the Telegram bot configuration.
 %   RESULT = CLIENT.TELEGRAMCONFIG()
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   GET /api/v1/telegram/config endpoint of the Telegram management surface.
 %
 %   Parameters:

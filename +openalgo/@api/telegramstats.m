@@ -2,7 +2,7 @@ function result = telegramstats(obj, varargin)
 %TELEGRAMSTATS Get Telegram bot command statistics.
 %   RESULT = CLIENT.TELEGRAMSTATS() or CLIENT.TELEGRAMSTATS(DAYS)
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   GET /api/v1/telegram/stats endpoint of the Telegram management surface.
 %
 %   Parameters:

@@ -38,7 +38,7 @@ classdef DataTest < RestTestCase
 
         function oneElementResponseArrayDecodesToStruct(tc)
             % Documented difference: jsondecode turns a one-element array of
-            % objects into a 1x1 struct (Python: a list of one dict).
+            % objects into a 1x1 struct.
             tc.respond('{"status":"success","results":[{"symbol":"RELIANCE","data":{"ltp":1}}]}');
             r = tc.Client.multiquotes(symbols={struct('symbol', 'RELIANCE', 'exchange', 'NSE')});
             tc.verifyClass(r.results, 'struct');
@@ -84,7 +84,7 @@ classdef DataTest < RestTestCase
         end
 
         function historyDailyIsZoneless(tc)
-            % Python: tz-naive pandas timestamps with the UTC clock time
+            % Daily bars: no time zone, with the UTC clock time
             tc.respond('{"status":"success","data":[{"timestamp":1735669800,"close":1}]}');
             tt = tc.Client.history(symbol="SBIN", exchange="NSE", interval="D", ...
                 start_date="2025-01-01", end_date="2025-01-10", source="db");

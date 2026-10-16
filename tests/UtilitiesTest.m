@@ -41,7 +41,7 @@ classdef UtilitiesTest < RestTestCase
         end
 
         function argumentErrors(tc)
-            % holidays and timings take no **kwargs in Python
+            % holidays and timings take no extra fields
             tc.verifyError(@() tc.Client.holidays(2025, 2026), 'openalgo:invalidArguments');
             tc.verifyError(@() tc.Client.holidays(month=1), 'openalgo:unexpectedArgument');
             tc.verifyError(@() tc.Client.timings("2025-01-15", exchange="NSE"), 'openalgo:unexpectedArgument');

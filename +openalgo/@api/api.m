@@ -4,8 +4,7 @@ classdef api < openalgo.BaseAPI & openalgo.FeedAPI
 %   creates the OpenAlgo client: one object carrying every REST method
 %   (orders, GTT orders, market data, account, options, strategy module,
 %   notifications and market calendar utilities) and the WebSocket market
-%   data feed. It mirrors openalgo.api in the Python SDK, with the same
-%   method names, parameter names, defaults and request payloads.
+%   data feed.
 %
 %   Constructor arguments (positional in this order, or name=value):
 %     api_key        - User's API key. Required.
@@ -29,27 +28,27 @@ classdef api < openalgo.BaseAPI & openalgo.FeedAPI
 %                      subscription after a drop, with exponential backoff.
 %
 %   CALLING CONVENTION
-%   Methods take name=value arguments with the exact, case-sensitive
-%   parameter names of the Python SDK:
+%   Methods take name=value arguments with exact, case-sensitive
+%   parameter names:
 %
-%     resp = client.placeorder(strategy="Python", symbol="SBIN", ...
+%     resp = client.placeorder(strategy="MATLAB Strategy", symbol="SBIN", ...
 %         action="BUY", exchange="NSE", price_type="MARKET", ...
 %         product="MIS", quantity=1);
 %
-%   - Parameters that are keyword-only in Python are name=value only. A
+%   - Most parameters are name=value only. A
 %     required one that is missing raises openalgo:missingArgument.
-%   - Parameters that are positional in Python also accept a leading
+%   - A few methods also accept their main value as a leading
 %     positional value: client.analyzertoggle(true), client.holidays(2025),
 %     client.timings("2025-01-15"), client.whatsapp("Build deployed").
-%   - [] stands for Python None. An optional parameter left at [] is not
-%     sent, exactly as the Python SDK skips None.
-%   - Extra name=value pairs on methods that take **kwargs in Python are
-%     added to the request payload (as text where the Python SDK applies
-%     str(), as is otherwise; [] values are skipped). Methods without
-%     **kwargs reject them with openalgo:unexpectedArgument.
+%   - [] means "not set". An optional parameter left at [] is not
+%     sent.
+%   - Extra name=value pairs are added to the request payload on the
+%     methods that accept them (as text where the server expects
+%     text, as is otherwise; [] values are skipped). Other methods
+%     reject them with openalgo:unexpectedArgument.
 %   - Lists (orders, symbols, legs, positions, phone numbers) are cell
 %     arrays or struct arrays and are always sent as JSON arrays, even with
-%     one element. Dicts are scalar structs.
+%     one element. A single record (JSON object) is a scalar struct.
 %
 %   RETURN VALUES
 %   Every REST method returns the decoded JSON response as a struct (from
@@ -57,7 +56,7 @@ classdef api < openalgo.BaseAPI & openalgo.FeedAPI
 %   is a struct with status 'error', message and error_type
 %   (http_error, json_error, api_error, timeout_error, connection_error,
 %   unknown_error, validation_error, no_data or processing_error), plus
-%   code and raw_response where the Python SDK includes them.
+%   code and raw_response where they apply.
 %   history returns a timetable and instruments a table on success.
 %
 %   ORDER METHODS
@@ -126,7 +125,7 @@ classdef api < openalgo.BaseAPI & openalgo.FeedAPI
 %     timings           - Market timings of a date.
 %     close             - Release the HTTP resources.
 %
-%   ADDITIONS (not present in the Python SDK)
+%   UTILITY AND MANAGEMENT METHODS
 %   These cover the remaining documented OpenAlgo REST endpoints. They
 %   follow the same calling convention; POST methods share the response
 %   handling of the order methods and GET methods that of instruments.

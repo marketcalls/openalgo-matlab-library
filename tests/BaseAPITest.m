@@ -1,7 +1,7 @@
 classdef BaseAPITest < RestTestCase
     %BASEAPITEST Client construction, request headers and the response
-    %   handling shared by every REST method (Python OrderAPI._handle_response
-    %   and the transport error mapping).
+    %   handling shared by every REST method (handleResponse and the
+    %   transport error mapping).
 
     methods (Test)
         function constructorDefaults(tc)
@@ -16,7 +16,7 @@ classdef BaseAPITest < RestTestCase
             tc.verifyEqual(c.verbose, 0);
             tc.verifyTrue(c.auto_reconnect);
             tc.verifyFalse(c.connected);
-            tc.verifyEqual(openalgo.version(), '1.0.0');
+            tc.verifyEqual(openalgo.version(), '1.1.0');
         end
 
         function constructorPositionalAndNamed(tc)
@@ -39,14 +39,14 @@ classdef BaseAPITest < RestTestCase
         function constructorErrors(tc)
             tc.verifyError(@() openalgo.api(), 'openalgo:missingArgument');
             tc.verifyError(@() openalgo.api(host="http://x"), 'openalgo:missingArgument');
-            % Python: TypeError unexpected keyword argument 'hots'. Before the
+            % A misspelled name raises unexpectedArgument. Before the
             % parseArgs fix this built a client with api_key 'api_key'.
             tc.verifyError(@() openalgo.api(api_key="k", hots="http://x"), 'openalgo:unexpectedArgument');
             tc.verifyError(@() openalgo.api(api_key="k", host="http://x", tmeout=5), ...
                 'openalgo:unexpectedArgument');
             % After a positional value a name=value pair with an unknown name
-            % is indistinguishable from two more positional values, exactly
-            % as the Python call api("k", "hots", "http://x") would be.
+            % is indistinguishable from two more positional values, so this
+            % is read as api("k", "hots", "http://x").
             c = openalgo.api("k", hots="http://x");
             tc.verifyEqual(c.base_url, 'hots/api/http://x/');
             tc.verifyError(@() openalgo.api("k", api_key="j"), 'openalgo:duplicateArgument');
@@ -111,8 +111,8 @@ classdef BaseAPITest < RestTestCase
         end
 
         function nonObjectBodies(tc)
-            % Python calls data.get(...) on the decoded value and reports
-            % the AttributeError as an unknown_error.
+            % A top level JSON value that is not an object gives an
+            % unknown_error naming its type.
             cases = {'[{"a":1}]', 'list'; '"hello"', 'str'; '5', 'int'; '1.5', 'float'; ...
                 'true', 'bool'; 'null', 'NoneType'};
             for i = 1:size(cases, 1)
@@ -152,7 +152,7 @@ classdef BaseAPITest < RestTestCase
         end
 
         function connectionClosedWithoutResponse(tc)
-            % Python: httpx.RemoteProtocolError -> http_error 'HTTP error occurred: ...'
+            % A connection closed without a response -> http_error 'HTTP error occurred: ...'
             tc.Server.enqueue(struct('action', 'close'));
             r = tc.Client.funds();
             tc.verifyErrorStruct(r, 'http_error');

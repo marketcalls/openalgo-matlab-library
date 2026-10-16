@@ -2,7 +2,7 @@ function result = telegrampreferences(obj, varargin)
 %TELEGRAMPREFERENCES Read the notification preferences of a Telegram user.
 %   RESULT = CLIENT.TELEGRAMPREFERENCES(TELEGRAM_ID)
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   GET /api/v1/telegram/preferences endpoint of the Telegram management surface.
 %
 %   Parameters:

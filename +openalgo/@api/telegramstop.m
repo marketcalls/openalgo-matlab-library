@@ -2,7 +2,7 @@ function result = telegramstop(obj, varargin)
 %TELEGRAMSTOP Stop the Telegram bot.
 %   RESULT = CLIENT.TELEGRAMSTOP()
 %
-%   Addition: not present in the Python SDK. It covers the documented
+%   It covers the documented
 %   POST /api/v1/telegram/stop endpoint of the Telegram management surface.
 %
 %   Parameters:

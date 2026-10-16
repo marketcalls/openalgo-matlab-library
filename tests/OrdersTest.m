@@ -1,12 +1,12 @@
 classdef OrdersTest < RestTestCase
-    %ORDERSTEST Order methods: payloads, defaults, kwargs and argument errors.
-    %   Expected bodies are the exact JSON the Python SDK 2.0.5 sends.
+    %ORDERSTEST Order methods: payloads, defaults, extra fields and argument errors.
+    %   Expected bodies are the exact JSON sent to the server.
 
     methods (Test)
         function placeorderDefaults(tc)
             tc.respond('{"status":"success","orderid":"250101000001"}');
             r = tc.Client.placeorder(symbol="SBIN", action="BUY", exchange="NSE");
-            tc.verifySinglePost('placeorder', ['{"apikey":"test-api-key","strategy":"Python",' ...
+            tc.verifySinglePost('placeorder', ['{"apikey":"test-api-key","strategy":"MATLAB",' ...
                 '"symbol":"SBIN","action":"BUY","exchange":"NSE","pricetype":"MARKET",' ...
                 '"product":"MIS","quantity":"1"}']);
             tc.verifyEqual(r, struct('status', 'success', 'orderid', '250101000001'));
@@ -24,13 +24,13 @@ classdef OrdersTest < RestTestCase
 
         function placeorderQuantityAsText(tc)
             tc.Client.placeorder(symbol="SBIN", action="SELL", exchange="NSE", quantity="10");
-            tc.verifySinglePost('placeorder', ['{"apikey":"test-api-key","strategy":"Python",' ...
+            tc.verifySinglePost('placeorder', ['{"apikey":"test-api-key","strategy":"MATLAB",' ...
                 '"symbol":"SBIN","action":"SELL","exchange":"NSE","pricetype":"MARKET",' ...
                 '"product":"MIS","quantity":"10"}']);
         end
 
         function placeorderStringScalarsAndIntegers(tc)
-            % string scalars and integer classes encode like char and Python int
+            % string scalars encode like char, integer classes as JSON integers
             tc.Client.placeorder(symbol='SBIN', action="BUY", exchange='NSE', quantity=int32(7), ...
                 price=single(1.5));
             r = tc.Server.lastRequest();
@@ -58,7 +58,7 @@ classdef OrdersTest < RestTestCase
         function placesmartorder(tc)
             tc.Client.placesmartorder(symbol="TATAMOTORS", action="SELL", exchange="NSE", ...
                 quantity=1, position_size=0, price_type="LIMIT", price=900);
-            tc.verifySinglePost('placesmartorder', ['{"apikey":"test-api-key","strategy":"Python",' ...
+            tc.verifySinglePost('placesmartorder', ['{"apikey":"test-api-key","strategy":"MATLAB",' ...
                 '"symbol":"TATAMOTORS","action":"SELL","exchange":"NSE","pricetype":"LIMIT",' ...
                 '"product":"MIS","quantity":"1","position_size":"0","price":"900"}']);
             tc.verifyError(@() tc.Client.placesmartorder(symbol="A", action="BUY", exchange="NSE"), ...
@@ -71,7 +71,7 @@ classdef OrdersTest < RestTestCase
                       struct('symbol', 'ZOMATO', 'exchange', 'NSE', 'action', 'SELL', ...
                         'quantity', '2', 'price', 10.5, 'flag', true)};
             tc.Client.basketorder(orders=orders, tag=7);
-            tc.verifySinglePost('basketorder', ['{"apikey":"test-api-key","strategy":"Python",' ...
+            tc.verifySinglePost('basketorder', ['{"apikey":"test-api-key","strategy":"MATLAB",' ...
                 '"orders":[{"symbol":"BHEL","exchange":"NSE","action":"BUY","quantity":"1",' ...
                 '"pricetype":"MARKET","product":"MIS"},{"symbol":"ZOMATO","exchange":"NSE",' ...
                 '"action":"SELL","quantity":"2","price":"10.5","flag":"True"}],"tag":"7"}']);
@@ -95,7 +95,7 @@ classdef OrdersTest < RestTestCase
         end
 
         function basketorderRejectsNonList(tc)
-            % Python: TypeError 'NoneType' object is not iterable
+            % orders must be a list: [] and text raise typeError
             tc.verifyError(@() tc.Client.basketorder(orders=[]), 'openalgo:typeError');
             tc.verifyError(@() tc.Client.basketorder(orders='x'), 'openalgo:typeError');
             tc.verifyError(@() tc.Client.basketorder(orders={1}), 'openalgo:typeError');
@@ -106,7 +106,7 @@ classdef OrdersTest < RestTestCase
         function splitorder(tc)
             tc.Client.splitorder(symbol="YESBANK", exchange="NSE", action="SELL", quantity=105, ...
                 splitsize=20, price=16.25);
-            tc.verifySinglePost('splitorder', ['{"apikey":"test-api-key","strategy":"Python",' ...
+            tc.verifySinglePost('splitorder', ['{"apikey":"test-api-key","strategy":"MATLAB",' ...
                 '"symbol":"YESBANK","action":"SELL","exchange":"NSE","quantity":"105",' ...
                 '"splitsize":"20","pricetype":"MARKET","product":"MIS","price":"16.25"}']);
         end
@@ -120,7 +120,7 @@ classdef OrdersTest < RestTestCase
 
         function openposition(tc)
             tc.Client.openposition(symbol="YESBANK", exchange="NSE", product="CNC");
-            tc.verifySinglePost('openposition', ['{"apikey":"test-api-key","strategy":"Python",' ...
+            tc.verifySinglePost('openposition', ['{"apikey":"test-api-key","strategy":"MATLAB",' ...
                 '"symbol":"YESBANK","exchange":"NSE","product":"CNC"}']);
         end
 
@@ -128,13 +128,13 @@ classdef OrdersTest < RestTestCase
             tc.Client.modifyorder(order_id="24120900146469", symbol="YESBANK", action="BUY", ...
                 exchange="NSE", product="CNC", quantity=1, price=16.5);
             tc.verifySinglePost('modifyorder', ['{"apikey":"test-api-key","orderid":"24120900146469",' ...
-                '"strategy":"Python","symbol":"YESBANK","action":"BUY","exchange":"NSE",' ...
+                '"strategy":"MATLAB","symbol":"YESBANK","action":"BUY","exchange":"NSE",' ...
                 '"pricetype":"LIMIT","product":"CNC","quantity":"1","price":"16.5",' ...
                 '"disclosed_quantity":"0","trigger_price":"0"}']);
         end
 
         function modifyorderAllFields(tc)
-            % order_id is sent as given (a number stays a number, as in Python)
+            % order_id is sent as given (a number stays a number)
             tc.Client.modifyorder(order_id=123, strategy="S", symbol="YESBANK", action="BUY", ...
                 exchange="NSE", price_type="SL", product="MIS", quantity="5", price="16.5", ...
                 disclosed_quantity=1, trigger_price=16.4, tag="x");
@@ -149,7 +149,7 @@ classdef OrdersTest < RestTestCase
         function cancelorder(tc)
             tc.Client.cancelorder(order_id="24120900146469");
             tc.verifySinglePost('cancelorder', ['{"apikey":"test-api-key",' ...
-                '"orderid":"24120900146469","strategy":"Python"}']);
+                '"orderid":"24120900146469","strategy":"MATLAB"}']);
         end
 
         function closeposition(tc)
@@ -157,9 +157,9 @@ classdef OrdersTest < RestTestCase
             tc.verifySinglePost('closeposition', '{"apikey":"test-api-key","strategy":"Test Strategy"}');
         end
 
-        function cancelallorderSkipsNoneKwargs(tc)
+        function cancelallorderSkipsUnsetExtraFields(tc)
             tc.Client.cancelallorder(note=[], n=3);
-            tc.verifySinglePost('cancelallorder', '{"apikey":"test-api-key","strategy":"Python","n":"3"}');
+            tc.verifySinglePost('cancelallorder', '{"apikey":"test-api-key","strategy":"MATLAB","n":"3"}');
         end
 
         function apiErrorIsReturned(tc)

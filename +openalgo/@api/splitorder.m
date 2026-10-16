@@ -3,7 +3,7 @@ function result = splitorder(obj, varargin)
 %   RESULT = CLIENT.SPLITORDER(Name=Value)
 %
 %   Parameters:
-%     strategy   - The trading strategy name. Default "Python".
+%     strategy   - The trading strategy name. Default "MATLAB".
 %     symbol     - Trading symbol. Required.
 %     action     - "BUY" or "SELL". Required.
 %     exchange   - Exchange code. Required.
@@ -27,7 +27,7 @@ function result = splitorder(obj, varargin)
 %   See also openalgo.api/placeorder, openalgo.api/basketorder.
 
 [a, kw] = openalgo.internal.parseArgs('splitorder', varargin, ...
-    {'strategy', 'Python'; 'symbol', []; 'action', []; 'exchange', []; ...
+    {'strategy', 'MATLAB'; 'symbol', []; 'action', []; 'exchange', []; ...
      'quantity', []; 'splitsize', []; 'price_type', 'MARKET'; 'product', 'MIS'}, ...
     {'symbol', 'action', 'exchange', 'quantity', 'splitsize'}, 0, true);
 

@@ -20,13 +20,9 @@ test-results/
 *.log
 junit*.xml
 
-# Python
+# Bytecode of the test mock servers
 __pycache__/
 *.py[cod]
-
-# Parity harness output
-tools/parity/out/
-tools/parity/scenarios.matlab.json
 
 # OS files
 .DS_Store

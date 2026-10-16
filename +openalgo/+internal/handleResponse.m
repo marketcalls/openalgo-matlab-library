@@ -1,8 +1,8 @@
 function result = handleResponse(code, text)
 %HANDLERESPONSE Turn an HTTP status and body into the SDK result struct.
-%   RESULT = openalgo.internal.handleResponse(CODE, TEXT) mirrors the Python
-%   OrderAPI._handle_response, which the unified client uses for every
-%   order, data, account, options, notification and utilities call:
+%   RESULT = openalgo.internal.handleResponse(CODE, TEXT) is the response
+%   handling of every order, data, account, options, notification and
+%   utilities call:
 %
 %     status ~= 200             -> http_error 'HTTP <code>: <body>' with code
 %     body is not JSON          -> json_error with raw_response
@@ -24,7 +24,7 @@ if ~ok
 end
 
 if ~strcmp(typeName, 'dict')
-    % Python calls data.get(...) on a non-dict and reports the AttributeError.
+    % A top level value that is not a JSON object cannot be read by field.
     result = openalgo.internal.errorResult( ...
         sprintf('''%s'' object has no attribute ''get''', typeName), 'unknown_error');
     return

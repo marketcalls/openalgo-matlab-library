@@ -5,8 +5,7 @@ classdef (Abstract) RestTestCase < matlab.unittest.TestCase
     %   before every test and creates a fresh client (tc.Client) pointing at
     %   it. Request bodies are compared as raw JSON text, so key order,
     %   number formatting and value types (strings, numbers, true/false,
-    %   null, arrays) are all checked exactly. The expected bodies are the
-    %   ones the Python SDK 2.0.5 sends for the same call.
+    %   null, arrays) are all checked exactly.
 
     properties (Constant)
         ApiKey = 'test-api-key'

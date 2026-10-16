@@ -35,7 +35,7 @@ classdef StrategyWebhookTest < RestTestCase
             tc.verifyEqual(s.webhook_url, [u '/strategy/webhook/b']);
             s = openalgo.Strategy(host_url=u, webhook_id="a");
             tc.verifyEqual(s.webhook_url, [u '/strategy/webhook/a']);
-            % webhook_token="" is not None, so it wins and is rejected as empty
+            % webhook_token="" is set (not []), so it wins and is rejected as empty
             tc.verifyError(@() openalgo.Strategy(u, 'a', webhook_token=''), 'openalgo:valueError');
         end
 

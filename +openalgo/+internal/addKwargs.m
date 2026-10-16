@@ -1,12 +1,11 @@
 function payload = addKwargs(payload, kw, stringify, skipExisting)
-%ADDKWARGS Merge Python-style **kwargs into a payload struct.
+%ADDKWARGS Merge extra name=value pairs into a payload struct.
 %   PAYLOAD = openalgo.internal.addKwargs(PAYLOAD, KW, STRINGIFY,
 %   SKIPEXISTING) adds each {name, value} row of KW (from parseArgs) to
-%   PAYLOAD in order, skipping None ([]) values the way the Python SDK
-%   skips None. With STRINGIFY true each value goes through pyStr (Python
-%   str(value)); otherwise it is sent as is. With SKIPEXISTING true a name
-%   already in PAYLOAD is left untouched; otherwise it is overwritten in
-%   place, keeping its position (as a Python dict update does).
+%   PAYLOAD in order, skipping unset ([]) values. With STRINGIFY true each
+%   value is converted to text with pyStr; otherwise it is sent as is.
+%   With SKIPEXISTING true a name already in PAYLOAD is left untouched;
+%   otherwise it is overwritten in place, keeping its position.
 
 if nargin < 3
     stringify = false;
